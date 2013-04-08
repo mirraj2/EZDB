@@ -40,6 +40,8 @@ public class Table {
       return "CHAR(36)";
     } else if (type == Integer.class) {
       return "INT";
+    } else if (type == Double.class) {
+      return "DOUBLE";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }

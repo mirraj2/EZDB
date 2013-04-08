@@ -1,15 +1,23 @@
 package ez;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
+import java.util.List;
 import java.util.Map.Entry;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import java.util.Set;
+import java.util.UUID;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.*;
-import com.jolbox.bonecp.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.jolbox.bonecp.BoneCP;
+import com.jolbox.bonecp.BoneCPConfig;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 public class DB {
 
@@ -229,8 +237,16 @@ public class DB {
   }
 
   private Object convert(Object o) {
+    if (o == null) {
+      return o;
+    }
     if (o instanceof UUID) {
       return o.toString();
+    } else if (o instanceof DateTime) {
+      return new java.util.Date(((DateTime) o).getMillis());
+    } else if (o.getClass().isEnum()) {
+      Enum<?> e = (Enum<?>) o;
+      return e.name();
     }
     return o;
   }
