@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jolbox.bonecp.BoneCP;
@@ -80,21 +82,23 @@ public class DB {
   }
 
   public void insert(String table, Iterable<Row> rows) {
-    for (Row row : rows) {
-      insert(table, row);
+    if(Iterables.isEmpty(rows)){
+      return;
     }
-  }
-
-  public void insert(String table, Row row) {
+    
     Connection conn = getConnection();
     PreparedStatement statement = null;
-    try {
-      statement = conn.prepareStatement(row.getInsertStatement(schema, table));
-      int c = 1;
-      for (Object o : row.map.values()) {
-        statement.setObject(c++, convert(o));
+    
+    try{
+      statement = conn.prepareStatement(Iterables.getFirst(rows,null).getInsertStatement(schema, table));
+      for (Row row : rows) {
+        int c = 1;
+        for (Object o : row.map.values()) {
+          statement.setObject(c++, convert(o));
+        }
+        statement.executeUpdate();
       }
-      statement.executeUpdate();
+      conn.commit();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     } finally {
@@ -103,6 +107,11 @@ public class DB {
       }
       close(conn);
     }
+    
+  }
+
+  public void insert(String table, Row row) {
+    insert(table, ImmutableList.of(row));
   }
 
   public void update(String table, Row row) {
