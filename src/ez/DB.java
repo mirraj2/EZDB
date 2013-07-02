@@ -37,6 +37,7 @@ public class DB {
       config.setUsername(user);
       config.setPassword(pass);
       config.setMaxConnectionsPerPartition(20);
+      config.setDefaultAutoCommit(true);
       pool = new BoneCP(config);
     } catch (Exception e) {
       throw Throwables.propagate(e);
