@@ -1,9 +1,13 @@
 package ez;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
-import com.google.common.collect.*;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class Table {
 
@@ -30,8 +34,12 @@ public class Table {
   }
 
   public Table primary(String name, Class<?> type) {
+    return primary(name, getType(type));
+  }
+
+  public Table primary(String name, String type) {
     primaryIndices.add(columns.size());
-    columns.put(name, getType(type));
+    columns.put(name, type);
     return this;
   }
 
@@ -42,6 +50,8 @@ public class Table {
       return "INT";
     } else if (type == Double.class) {
       return "DOUBLE";
+    } else if (type == Boolean.class) {
+      return "TINYINT(1)";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }
@@ -55,9 +65,14 @@ public class Table {
     for (Entry<String, String> e : columns.entrySet()) {
       s += "`" + e.getKey() + "`" + " " + e.getValue() + ",\n";
     }
-    for (Integer i : primaryIndices) {
-      String primary = Iterables.get(columns.keySet(), i);
-      s += "PRIMARY KEY (`" + primary + "`),\n";
+    if (!primaryIndices.isEmpty()) {
+      s += "PRIMARY KEY (";
+      for (Integer i : primaryIndices) {
+        String primary = Iterables.get(columns.keySet(), i);
+        s += "`" + primary + "`,";
+      }
+      s = s.substring(0, s.length() - 1);
+      s += "),\n";
     }
     s = s.substring(0, s.length() - 2);
     s += ")\n";

@@ -30,10 +30,11 @@ public class DB {
 
   private String schema = null;
 
-  public DB(String ip, String user, String pass) {
+  public DB(String ip, String user, String pass, String schema) {
+    this.schema = schema;
     try {
       BoneCPConfig config = new BoneCPConfig();
-      config.setJdbcUrl("jdbc:mysql://" + ip + ":3306/");
+      config.setJdbcUrl("jdbc:mysql://" + ip + ":3306/" + schema);
       config.setUsername(user);
       config.setPassword(pass);
       config.setMaxConnectionsPerPartition(20);
@@ -99,7 +100,6 @@ public class DB {
         }
         statement.executeUpdate();
       }
-      conn.commit();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     } finally {
