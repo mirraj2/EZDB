@@ -10,6 +10,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -17,9 +21,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
 
 public class DB {
 
@@ -76,23 +77,22 @@ public class DB {
     } catch (Exception e) {
       throw Throwables.propagate(e);
     } finally {
-      if (statement != null) {
-        close(statement);
-      }
+      close(statement);
       close(conn);
     }
   }
 
   public void insert(String table, Iterable<Row> rows) {
-    if(Iterables.isEmpty(rows)){
+    if (Iterables.isEmpty(rows)) {
       return;
     }
-    
+
     Connection conn = getConnection();
     PreparedStatement statement = null;
-    
-    try{
-      statement = conn.prepareStatement(Iterables.getFirst(rows,null).getInsertStatement(schema, table));
+
+    try {
+      statement =
+          conn.prepareStatement(Iterables.getFirst(rows, null).getInsertStatement(schema, table));
       for (Row row : rows) {
         int c = 1;
         for (Object o : row.map.values()) {
@@ -103,16 +103,33 @@ public class DB {
     } catch (Exception e) {
       throw Throwables.propagate(e);
     } finally {
-      if (statement != null) {
-        close(statement);
-      }
+      close(statement);
       close(conn);
     }
-    
+
   }
 
   public void insert(String table, Row row) {
     insert(table, ImmutableList.of(row));
+  }
+
+  public void update(String query, Object... args) {
+    Connection conn = getConnection();
+    PreparedStatement statement = null;
+    try {
+      statement = conn.prepareStatement(query);
+      int c = 1;
+      for (Object arg : args) {
+        statement.setObject(c++, convert(arg));
+      }
+      statement.executeUpdate();
+    } catch (Exception e) {
+      logger.error("query: " + query);
+      throw Throwables.propagate(e);
+    } finally {
+      close(statement);
+      close(conn);
+    }
   }
 
   public void update(String table, Row row) {
@@ -133,9 +150,7 @@ public class DB {
       logger.error("query: " + query);
       throw Throwables.propagate(e);
     } finally {
-      if (statement != null) {
-        close(statement);
-      }
+      close(statement);
       close(conn);
     }
   }
@@ -231,6 +246,9 @@ public class DB {
   }
 
   private void close(Statement statement) {
+    if (statement == null) {
+      return;
+    }
     try {
       statement.close();
     } catch (Exception e) {
