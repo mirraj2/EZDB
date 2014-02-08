@@ -52,6 +52,8 @@ public class Table {
       return "DOUBLE";
     } else if (type == Boolean.class) {
       return "TINYINT(1)";
+    } else if (type == String.class) {
+      return "VARCHAR(255)";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }
