@@ -50,6 +50,8 @@ public class Table {
       return "INT";
     } else if (type == Double.class) {
       return "DOUBLE";
+    } else if (type == Long.class) {
+      return "BIGINT";
     } else if (type == Boolean.class) {
       return "TINYINT(1)";
     } else if (type == String.class) {
