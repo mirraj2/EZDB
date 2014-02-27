@@ -10,10 +10,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -21,6 +17,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 public class DB {
 
@@ -69,7 +68,7 @@ public class DB {
       while (r.next()) {
         Row row = new Row();
         for (int i = 1; i <= meta.getColumnCount(); i++) {
-          row.with(meta.getColumnName(i), r.getObject(i));
+          row.with(meta.getColumnLabel(i), r.getObject(i));
         }
         ret.add(row);
       }
