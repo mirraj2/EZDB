@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -31,6 +30,15 @@ public class Table {
 
   public Table varchar(String name, int n) {
     return column(name, "VARCHAR(" + n + ")");
+  }
+
+  /**
+   * Adds an 'id' column that auto increments.
+   */
+  public Table idColumn() {
+    primaryIndices.add(columns.size());
+    column("id", "INTEGER UNSIGNED NOT NULL AUTO_INCREMENT");
+    return this;
   }
 
   public Table primary(String name, Class<?> type) {
