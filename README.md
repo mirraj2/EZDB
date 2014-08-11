@@ -1,8 +1,6 @@
 EZDB
 ====
 
-A library that allows for easy read/writing to a database.
-
 Getting started is this easy:
 
 ```
