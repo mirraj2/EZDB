@@ -1,6 +1,8 @@
 EZDB
 ====
 
+Provides an easy-to-use API for accessing your database. There are only 3 classes: DB, Table, and Row.
+
 Getting started is this easy:
 
 ```
