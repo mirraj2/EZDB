@@ -5,7 +5,8 @@ A library that allows for easy read/writing to a database.
 
 Getting started is this easy:
 
-`//connect to the database
+```
+//connect to the database
 Db db = new DB("localhost", "username", "password", "schema");
 
 //add a new table
@@ -18,4 +19,5 @@ db.insert("hero", new Row().with("name", "Sabriel").with("level", 19).with("aliv
 public boolean isAlive(String heroName){
   Row row = db.selectSingleRow("SELECT alive FROM hero WHERE name = ?", heroName);
   return row.getBoolean("alive");
-}`
+}
+```
