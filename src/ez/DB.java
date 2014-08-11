@@ -5,13 +5,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -45,7 +46,9 @@ public class DB {
   }
 
   public DB usingSchema(String schema) {
-    if (StringUtils.isBlank(schema)) schema = null;
+    if (Strings.isNullOrEmpty(schema)) {
+      schema = null;
+    }
 
     if (!getSchemas().contains(schema.toLowerCase())) {
       execute("Create Database " + schema);
@@ -56,16 +59,22 @@ public class DB {
     return this;
   }
 
-  public Row selectSingleRow(String query) {
-    return getOnlyElement(select(query), null);
+  public Row selectSingleRow(String query, Object... args) {
+    return getOnlyElement(select(query, args), null);
   }
 
-  public List<Row> select(String query) {
+  public List<Row> select(String query, Object... args) {
     Connection conn = getConnection();
-    Statement statement = null;
+    PreparedStatement statement = null;
+    ResultSet r = null;
     try {
-      statement = conn.createStatement();
-      ResultSet r = statement.executeQuery(query);
+      statement = conn.prepareStatement(query);
+
+      for (int c = 0; c < args.length; c++) {
+        statement.setObject(c + 1, convert(args[c]));
+      }
+
+      r = statement.executeQuery();
       List<Row> ret = Lists.newArrayList();
       ResultSetMetaData meta = r.getMetaData();
       while (r.next()) {
@@ -77,11 +86,21 @@ public class DB {
       }
       return ret;
     } catch (Exception e) {
+      logger.error("Problem with query: " + query);
       throw Throwables.propagate(e);
     } finally {
+      close(r);
       close(statement);
       close(conn);
     }
+  }
+
+  /**
+   * Returns the id of the inserted row.
+   */
+  public Long insert(String table, Row row) {
+    insert(table, ImmutableList.of(row));
+    return row.getLong("id");
   }
 
   public void insert(String table, Iterable<Row> rows) {
@@ -91,28 +110,35 @@ public class DB {
 
     Connection conn = getConnection();
     PreparedStatement statement = null;
+    ResultSet generatedKeys = null;
 
     try {
-      statement =
-          conn.prepareStatement(Iterables.getFirst(rows, null).getInsertStatement(schema, table));
+      String s = Iterables.getFirst(rows, null).getInsertStatement(schema, table);
+      statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
       for (Row row : rows) {
         int c = 1;
         for (Object o : row.map.values()) {
           statement.setObject(c++, convert(o));
         }
-        statement.executeUpdate();
+        statement.addBatch();
       }
+      statement.executeBatch();
+      generatedKeys = statement.getGeneratedKeys();
+
+      Iterator<Row> iter = rows.iterator();
+      while (generatedKeys.next()) {
+        long id = generatedKeys.getLong(1);
+        iter.next().with("id", id);
+      }
+
     } catch (Exception e) {
       throw Throwables.propagate(e);
     } finally {
+      close(generatedKeys);
       close(statement);
       close(conn);
     }
 
-  }
-
-  public void insert(String table, Row row) {
-    insert(table, ImmutableList.of(row));
   }
 
   public void update(String query, Object... args) {
@@ -155,6 +181,11 @@ public class DB {
       close(statement);
       close(conn);
     }
+  }
+
+  public int getCount(String countQuery, Object... args) {
+    Row row = selectSingleRow(countQuery, args);
+    return row.getLong("count(*)").intValue();
   }
 
   public Set<String> getSchemas() {
@@ -255,6 +286,16 @@ public class DB {
       statement.close();
     } catch (Exception e) {
       e.printStackTrace();
+    }
+  }
+
+  private void close(ResultSet results) {
+    if (results != null) {
+      try {
+        results.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 

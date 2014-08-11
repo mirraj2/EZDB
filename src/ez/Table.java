@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import org.joda.time.DateTime;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -64,6 +65,8 @@ public class Table {
       return "TINYINT(1)";
     } else if (type == String.class) {
       return "VARCHAR(255)";
+    } else if (type == DateTime.class) {
+      return "DATETIME";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }

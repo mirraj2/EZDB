@@ -1,10 +1,10 @@
 package ez;
 
+import java.util.Iterator;
 import java.util.Map;
-
 import com.google.common.collect.Maps;
 
-public class Row {
+public class Row implements Iterable<String> {
 
   final Map<String, Object> map = Maps.newLinkedHashMap();
 
@@ -13,9 +13,20 @@ public class Row {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T> T get(String key) {
-    return (T) map.get(key);
+  public String get(String key) {
+    return (String) map.get(key);
+  }
+
+  public Integer getInt(String key) {
+    return (Integer) map.get(key);
+  }
+
+  public Long getLong(String key) {
+    return (Long) map.get(key);
+  }
+
+  public Object getObject(String key) {
+    return map.get(key);
   }
 
   String getInsertStatement(String schema, String table) {
@@ -48,6 +59,11 @@ public class Row {
   @Override
   public String toString() {
     return map.toString();
+  }
+
+  @Override
+  public Iterator<String> iterator() {
+    return map.keySet().iterator();
   }
 
 }
