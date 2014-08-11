@@ -8,10 +8,18 @@ Getting started is this easy:
 Db db = new DB("localhost", "username", "password", "schema");
 
 //add a new table
-db.addTable(new Table("hero").idColumn().column("name", String.class).column("level", Integer.class).column("alive", Boolean.class);
+db.addTable(new Table("hero")
+  .idColumn()
+  .column("name", String.class)
+  .column("level", Integer.class)
+  .column("alive", Boolean.class);
 
 //insert a row
-db.insert("hero", new Row().with("name", "Sabriel").with("level", 19).with("alive", true));
+db.insert("hero",
+  new Row()
+  .with("name", "Sabriel")
+  .with("level", 19)
+  .with("alive", true));
 
 //checks to see if the given hero is alive
 public boolean isAlive(String heroName){
