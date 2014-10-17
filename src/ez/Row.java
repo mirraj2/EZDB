@@ -1,5 +1,7 @@
 package ez;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.Map;
 import com.google.common.collect.Maps;
@@ -23,6 +25,15 @@ public class Row implements Iterable<String> {
 
   public Long getLong(String key) {
     return (Long) map.get(key);
+  }
+
+  public Double getDouble(String key) {
+    return (Double) map.get(key);
+  }
+
+  public LocalDate getDate(String key) {
+    Date date = (Date) map.get(key);
+    return date == null ? null : date.toLocalDate();
   }
 
   public Object getObject(String key) {

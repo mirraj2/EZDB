@@ -1,10 +1,11 @@
 package ez;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-import org.joda.time.DateTime;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -65,8 +66,10 @@ public class Table {
       return "TINYINT(1)";
     } else if (type == String.class) {
       return "VARCHAR(255)";
-    } else if (type == DateTime.class) {
+    } else if (type == LocalDateTime.class) {
       return "DATETIME";
+    } else if (type == LocalDate.class) {
+      return "DATE";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }
@@ -94,6 +97,10 @@ public class Table {
     s += "ENGINE = InnoDB";
 
     return s;
+  }
+
+  public Map<String, String> getColumns() {
+    return columns;
   }
 
 }

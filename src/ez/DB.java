@@ -5,13 +5,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -20,6 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
 
 public class DB {
@@ -73,7 +78,6 @@ public class DB {
       for (int c = 0; c < args.length; c++) {
         statement.setObject(c + 1, convert(args[c]));
       }
-
       r = statement.executeQuery();
       List<Row> ret = Lists.newArrayList();
       ResultSetMetaData meta = r.getMetaData();
@@ -227,6 +231,8 @@ public class DB {
   }
 
   public void addTable(Table table) {
+    checkNotNull(table);
+
     if (getTables().contains(table.name)) {
       throw new IllegalArgumentException("Table already exists: " + table.name);
     }
@@ -313,8 +319,12 @@ public class DB {
     }
     if (o instanceof UUID) {
       return o.toString();
-    } else if (o instanceof DateTime) {
-      return new java.util.Date(((DateTime) o).getMillis());
+    } else if (o instanceof LocalDateTime) {
+      return Date.from(((LocalDateTime) o).atZone(ZoneId.systemDefault()).toInstant());
+    } else if(o instanceof LocalDate){
+      return java.sql.Date.valueOf((LocalDate) o);
+    } else if(o instanceof Instant){
+      return Date.from((Instant) o);
     } else if (o.getClass().isEnum()) {
       Enum<?> e = (Enum<?>) o;
       return e.name();
