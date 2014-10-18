@@ -1,5 +1,8 @@
 package ez;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.getOnlyElement;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,7 +18,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import org.apache.log4j.Logger;
+
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -24,12 +27,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jolbox.bonecp.BoneCP;
 import com.jolbox.bonecp.BoneCPConfig;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Iterables.getOnlyElement;
 
 public class DB {
-
-  private static final Logger logger = Logger.getLogger(DB.class);
 
   private final BoneCP pool;
 
@@ -90,7 +89,7 @@ public class DB {
       }
       return ret;
     } catch (Exception e) {
-      logger.error("Problem with query: " + query);
+      System.err.println("Problem with query: " + query);
       throw Throwables.propagate(e);
     } finally {
       close(r);
@@ -156,7 +155,7 @@ public class DB {
       }
       statement.executeUpdate();
     } catch (Exception e) {
-      logger.error("query: " + query);
+      System.err.println("query: " + query);
       throw Throwables.propagate(e);
     } finally {
       close(statement);
@@ -179,7 +178,7 @@ public class DB {
       statement.setObject(c++, convert(row.map.get("id")));
       statement.executeUpdate();
     } catch (Exception e) {
-      logger.error("query: " + query);
+      System.err.println("query: " + query);
       throw Throwables.propagate(e);
     } finally {
       close(statement);
@@ -269,7 +268,7 @@ public class DB {
       s.executeUpdate(statement);
       s.close();
     } catch (Exception e) {
-      logger.error("Problem executing statement:\n " + statement);
+      System.err.println("Problem executing statement:\n " + statement);
       throw Throwables.propagate(e);
     } finally {
       close(c);
