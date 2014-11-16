@@ -2,7 +2,6 @@ package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,35 +17,28 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class DB {
 
-  private final BoneCP pool;
-
+  private final HikariDataSource source;
   private String schema = null;
+  private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
   public DB(String ip, String user, String pass, String schema) {
     this.schema = schema;
-    try {
-      BoneCPConfig config = new BoneCPConfig();
-      config.setJdbcUrl("jdbc:mysql://" + ip + ":3306/" + schema);
-      config.setUsername(user);
-      config.setPassword(pass);
-      config.setMaxConnectionsPerPartition(20);
-      config.setDefaultAutoCommit(true);
-      pool = new BoneCP(config);
-    } catch (Exception e) {
-      throw Throwables.propagate(e);
-    }
+
+    source = new HikariDataSource();
+    source.setJdbcUrl("jdbc:mysql://" + ip + ":3306/" + schema);
+    source.setUsername(user);
+    source.setPassword(pass);
+    source.setAutoCommit(true);
   }
 
   public DB usingSchema(String schema) {
@@ -59,6 +51,33 @@ public class DB {
     }
 
     this.schema = schema;
+
+    return this;
+  }
+
+  public DB transaction(Runnable r) {
+    Connection conn = getConnection();
+    try {
+      conn.setAutoCommit(false);
+      transactionConnections.set(conn);
+      r.run();
+      conn.commit();
+    } catch (Exception e) {
+      try {
+        conn.rollback();
+      } catch (Exception ee) {
+        throw Throwables.propagate(ee);
+      }
+      throw Throwables.propagate(e);
+    } finally {
+      transactionConnections.remove();
+      try {
+        conn.setAutoCommit(true);
+        conn.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
 
     return this;
   }
@@ -103,7 +122,11 @@ public class DB {
    */
   public Long insert(String table, Row row) {
     insert(table, ImmutableList.of(row));
-    return row.getLong("id");
+    Object o = row.getObject("id");
+    if (o instanceof Long) {
+      return (Long) o;
+    }
+    return null;
   }
 
   public void insert(String table, Iterable<Row> rows) {
@@ -172,7 +195,8 @@ public class DB {
       statement = conn.prepareStatement(query);
       int c = 1;
       for (Entry<String, Object> e : row.map.entrySet()) {
-        if (e.getKey().equals("id")) continue;
+        if (e.getKey().equals("id"))
+          continue;
         statement.setObject(c++, convert(e.getValue()));
       }
       statement.setObject(c++, convert(row.map.get("id")));
@@ -237,6 +261,9 @@ public class DB {
     }
 
     execute(table.toSQL(schema));
+    for (String index : table.indices) {
+      execute("ALTER TABLE `" + table.name + "` ADD INDEX `" + index + "` (`" + index + "`)");
+    }
   }
 
   public DB wipe() {
@@ -276,6 +303,10 @@ public class DB {
   }
 
   private void close(Connection c) {
+    if (transactionConnections.get() != null) {
+      // we're in a transaction, so don't close the connection.
+      return;
+    }
     try {
       c.close();
     } catch (Exception e) {
@@ -305,8 +336,12 @@ public class DB {
   }
 
   public Connection getConnection() {
+    Connection ret = transactionConnections.get();
+    if (ret != null) {
+      return ret;
+    }
     try {
-      return pool.getConnection();
+      return source.getConnection();
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
@@ -320,9 +355,9 @@ public class DB {
       return o.toString();
     } else if (o instanceof LocalDateTime) {
       return Date.from(((LocalDateTime) o).atZone(ZoneId.systemDefault()).toInstant());
-    } else if(o instanceof LocalDate){
+    } else if (o instanceof LocalDate) {
       return java.sql.Date.valueOf((LocalDate) o);
-    } else if(o instanceof Instant){
+    } else if (o instanceof Instant) {
       return Date.from((Instant) o);
     } else if (o.getClass().isEnum()) {
       Enum<?> e = (Enum<?>) o;

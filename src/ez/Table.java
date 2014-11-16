@@ -16,6 +16,7 @@ public class Table {
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
   private List<Integer> primaryIndices = Lists.newArrayList();
+  final List<String> indices = Lists.newArrayList();
 
   public Table(String name) {
     this.name = name;
@@ -50,6 +51,11 @@ public class Table {
   public Table primary(String name, String type) {
     primaryIndices.add(columns.size());
     columns.put(name, type);
+    return this;
+  }
+
+  public Table index(String name) {
+    indices.add(name);
     return this;
   }
 

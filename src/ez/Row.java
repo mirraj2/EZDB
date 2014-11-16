@@ -1,7 +1,9 @@
 package ez;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Map;
 import com.google.common.collect.Maps;
@@ -34,6 +36,11 @@ public class Row implements Iterable<String> {
   public LocalDate getDate(String key) {
     Date date = (Date) map.get(key);
     return date == null ? null : date.toLocalDate();
+  }
+
+  public LocalDateTime getDateTime(String key) {
+    Timestamp date = (Timestamp) map.get(key);
+    return date == null ? null : date.toLocalDateTime();
   }
 
   public Object getObject(String key) {
