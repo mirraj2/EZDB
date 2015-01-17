@@ -33,6 +33,10 @@ public class Row implements Iterable<String> {
     return (Double) map.get(key);
   }
 
+  public Boolean getBoolean(String key) {
+    return (Boolean) map.get(key);
+  }
+
   public LocalDate getDate(String key) {
     Date date = (Date) map.get(key);
     return date == null ? null : date.toLocalDate();
