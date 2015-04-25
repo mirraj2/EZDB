@@ -10,7 +10,6 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -85,7 +84,7 @@ public class DB {
   public Row selectSingleRow(String query, Object... args) {
     return getOnlyElement(select(query, args), null);
   }
-
+  
   public List<Row> select(String query, Object... args) {
     Connection conn = getConnection();
     PreparedStatement statement = null;
@@ -354,7 +353,7 @@ public class DB {
     if (o instanceof UUID) {
       return o.toString();
     } else if (o instanceof LocalDateTime) {
-      return Date.from(((LocalDateTime) o).atZone(ZoneId.systemDefault()).toInstant());
+      return o.toString();
     } else if (o instanceof LocalDate) {
       return java.sql.Date.valueOf((LocalDate) o);
     } else if (o instanceof Instant) {

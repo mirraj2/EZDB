@@ -1,7 +1,10 @@
 package ez;
 
+import static jasonlib.util.Functions.map;
+import jasonlib.Reflection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -73,7 +76,7 @@ public class Table {
     } else if (type == String.class) {
       return "VARCHAR(255)";
     } else if (type == LocalDateTime.class) {
-      return "DATETIME";
+      return "VARCHAR(63)";
     } else if (type == LocalDate.class) {
       return "DATE";
     }
@@ -100,13 +103,41 @@ public class Table {
     }
     s = s.substring(0, s.length() - 2);
     s += ")\n";
-    s += "ENGINE = InnoDB";
+    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
     return s;
   }
 
   public Map<String, String> getColumns() {
     return columns;
+  }
+
+  public Row toRow(Object o) {
+    Row row = new Row();
+
+    for (String column : columns.keySet()) {
+      Object value = Reflection.get(o, column);
+      row.with(column, value);
+    }
+
+    return row;
+  }
+
+  public <T> List<T> fromRows(Collection<Row> rows, Class<T> c) {
+    return map(rows, row->fromRow(row,c));
+  }
+
+  public <T> T fromRow(Row row, Class<T> c) {
+    if (row == null) {
+      return null;
+    }
+
+    T ret = Reflection.newInstance(c);
+    for (String column : columns.keySet()) {
+      Object value = row.getObject(column);
+      Reflection.set(ret, column, value);
+    }
+    return ret;
   }
 
 }
