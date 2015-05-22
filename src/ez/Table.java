@@ -123,6 +123,10 @@ public class Table {
     return row;
   }
 
+  public List<Row> toRows(Collection<?> list) {
+    return map(list, this::toRow);
+  }
+
   public <T> List<T> fromRows(Collection<Row> rows, Class<T> c) {
     return map(rows, row->fromRow(row,c));
   }
