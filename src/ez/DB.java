@@ -1,6 +1,7 @@
 package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,6 +11,7 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -84,7 +86,7 @@ public class DB {
   public Row selectSingleRow(String query, Object... args) {
     return getOnlyElement(select(query, args), null);
   }
-  
+
   public List<Row> select(String query, Object... args) {
     Connection conn = getConnection();
     PreparedStatement statement = null;
@@ -186,20 +188,32 @@ public class DB {
   }
 
   public void update(String table, Row row) {
+    update(table, ImmutableList.of(row));
+  }
+
+  public void update(String table, Collection<Row> rows) {
+    if (rows.isEmpty()) {
+      return;
+    }
+
     Connection conn = getConnection();
     PreparedStatement statement = null;
     String query = "";
     try {
-      query = row.getUpdateStatement(schema, table);
+      query = getFirst(rows, null).getUpdateStatement(schema, table);
       statement = conn.prepareStatement(query);
-      int c = 1;
-      for (Entry<String, Object> e : row.map.entrySet()) {
-        if (e.getKey().equals("id"))
-          continue;
-        statement.setObject(c++, convert(e.getValue()));
+      for (Row row : rows) {
+        int c = 1;
+        for (Entry<String, Object> e : row.map.entrySet()) {
+          if (e.getKey().equals("id"))
+            continue;
+          statement.setObject(c++, convert(e.getValue()));
+        }
+        statement.setObject(c++, convert(row.map.get("id")));
+        statement.addBatch();
       }
-      statement.setObject(c++, convert(row.map.get("id")));
-      statement.executeUpdate();
+      statement.executeBatch();
+      // statement.executeUpdate();
     } catch (Exception e) {
       System.err.println("query: " + query);
       throw Throwables.propagate(e);
