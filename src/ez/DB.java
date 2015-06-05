@@ -168,7 +168,7 @@ public class DB {
 
   }
 
-  public void update(String query, Object... args) {
+  public int update(String query, Object... args) {
     Connection conn = getConnection();
     PreparedStatement statement = null;
     try {
@@ -177,7 +177,7 @@ public class DB {
       for (Object arg : args) {
         statement.setObject(c++, convert(arg));
       }
-      statement.executeUpdate();
+      return statement.executeUpdate();
     } catch (Exception e) {
       System.err.println("query: " + query);
       throw Throwables.propagate(e);

@@ -1,6 +1,7 @@
 package ez;
 
 import static jasonlib.util.Functions.map;
+import jasonlib.Json;
 import jasonlib.Reflection;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -112,11 +113,18 @@ public class Table {
     return columns;
   }
 
+  public boolean hasColumn(String column) {
+    return columns.containsKey(column);
+  }
+
   public Row toRow(Object o) {
     Row row = new Row();
 
     for (String column : columns.keySet()) {
       Object value = Reflection.get(o, column);
+      if (value instanceof Json) {
+        value = value.toString();
+      }
       row.with(column, value);
     }
 
@@ -128,7 +136,7 @@ public class Table {
   }
 
   public <T> List<T> fromRows(Collection<Row> rows, Class<T> c) {
-    return map(rows, row->fromRow(row,c));
+    return map(rows, row -> fromRow(row, c));
   }
 
   public <T> T fromRow(Row row, Class<T> c) {
