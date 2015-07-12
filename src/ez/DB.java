@@ -298,7 +298,7 @@ public class DB {
   }
 
   public void deleteTable(String table) {
-    execute("DROP TABLE " + schema + "." + table);
+    execute("DROP TABLE `" + schema + "`.`" + table + "`");
   }
 
   public void execute(String statement) {
