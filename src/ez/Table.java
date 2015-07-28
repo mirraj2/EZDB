@@ -1,8 +1,6 @@
 package ez;
 
-import static jasonlib.util.Functions.map;
-import jasonlib.Json;
-import jasonlib.Reflection;
+import static ox.util.Functions.map;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -10,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import ox.Json;
+import ox.Reflection;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
