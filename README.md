@@ -5,7 +5,7 @@ Provides an easy-to-use API for accessing your database. There are only 3 classe
 
 Getting started is this easy:
 
-```
+```java
 //connect to the database
 Db db = new DB("localhost", "username", "password", "schema");
 
