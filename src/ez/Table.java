@@ -1,6 +1,7 @@
 package ez;
 
 import static ox.util.Functions.map;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -147,6 +148,9 @@ public class Table {
     T ret = Reflection.newInstance(c);
     for (String column : columns.keySet()) {
       Object value = row.getObject(column);
+      if (value instanceof Date) {
+        value = ((Date) value).toLocalDate();
+      }
       Reflection.set(ret, column, value);
     }
     return ret;
