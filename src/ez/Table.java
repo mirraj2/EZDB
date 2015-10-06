@@ -1,5 +1,6 @@
 package ez;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static ox.util.Functions.map;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -119,6 +120,8 @@ public class Table {
   }
 
   public Row toRow(Object o) {
+    checkNotNull(o);
+
     Row row = new Row();
 
     for (String column : columns.keySet()) {
