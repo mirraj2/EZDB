@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import ox.Json;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -205,8 +206,9 @@ public class DB {
       for (Row row : rows) {
         int c = 1;
         for (Entry<String, Object> e : row.map.entrySet()) {
-          if (e.getKey().equals("id"))
+          if (e.getKey().equals("id")) {
             continue;
+          }
           statement.setObject(c++, convert(e.getValue()));
         }
         statement.setObject(c++, convert(row.map.get("id")));
@@ -375,6 +377,8 @@ public class DB {
     } else if (o.getClass().isEnum()) {
       Enum<?> e = (Enum<?>) o;
       return e.name();
+    } else if (o instanceof Json) {
+      return o.toString();
     }
     return o;
   }
