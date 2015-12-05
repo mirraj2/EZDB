@@ -54,8 +54,9 @@ public class Row implements Iterable<String> {
     return LocalDateTime.parse(s);
   }
 
-  public Object getObject(String key) {
-    return map.get(key);
+  @SuppressWarnings("unchecked")
+  public <T> T getObject(String key) {
+    return (T) map.get(key);
   }
 
   String getInsertStatement(String schema, String table) {
@@ -122,7 +123,7 @@ public class Row implements Iterable<String> {
     } else if (value instanceof Number) {
       json.with(key, (Number) value);
     } else if (value instanceof Boolean) {
-      json.with(key, (Boolean) value);
+      json.with(key, value);
     } else if (value instanceof Date) {
       json.with(key, value.toString());
     } else if (value instanceof Timestamp) {

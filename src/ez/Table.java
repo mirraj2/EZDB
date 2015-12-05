@@ -150,11 +150,15 @@ public class Table {
     }
 
     T ret = Reflection.newInstance(c);
-    for (String column : columns.keySet()) {
-      Object value = row.getObject(column);
-      Reflection.set(ret, column, value);
-    }
+    row.map.forEach((k, v) -> {
+      Reflection.set(ret, k, v);
+    });
     return ret;
+  }
+
+  @Override
+  public String toString() {
+    return name;
   }
 
 }
