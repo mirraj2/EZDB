@@ -6,10 +6,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Map;
-import ox.Json;
-import ox.util.Utils;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import ox.Json;
+import ox.util.Utils;
 
 public class Row implements Iterable<String> {
 
@@ -18,6 +18,10 @@ public class Row implements Iterable<String> {
   public Row with(String key, Object value) {
     map.put(key, value);
     return this;
+  }
+
+  public Long getId() {
+    return getLong("id");
   }
 
   public String get(String key) {
