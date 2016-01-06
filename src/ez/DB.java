@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import ox.Json;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -26,6 +25,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
+import ox.Json;
 
 public class DB {
 
@@ -301,6 +301,10 @@ public class DB {
 
   public void deleteTable(String table) {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
+  }
+
+  public void deleteColumn(String table, String column) {
+    execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
 
   public void execute(String statement) {
