@@ -9,11 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
-import ox.Json;
-import ox.Reflection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import ox.Json;
+import ox.Reflection;
 
 public class Table {
 
@@ -21,7 +22,7 @@ public class Table {
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
   private List<Integer> primaryIndices = Lists.newArrayList();
-  final List<String> indices = Lists.newArrayList();
+  final List<List<String>> indices = Lists.newArrayList();
 
   public Table(String name) {
     this.name = name;
@@ -59,8 +60,8 @@ public class Table {
     return this;
   }
 
-  public Table index(String name) {
-    indices.add(name);
+  public Table index(String... columns) {
+    indices.add(ImmutableList.copyOf(columns));
     return this;
   }
 

@@ -3,6 +3,7 @@ package ez;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static ox.util.Functions.map;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -276,8 +278,10 @@ public class DB {
     }
 
     execute(table.toSQL(schema));
-    for (String index : table.indices) {
-      execute("ALTER TABLE `" + table.name + "` ADD INDEX `" + index + "` (`" + index + "`)");
+    for (List<String> index : table.indices) {
+      String indexName = Joiner.on("_").join(index);
+      index = map(index, s -> '`' + s + '`');
+      execute("ALTER TABLE `" + table.name + "` ADD INDEX `" + indexName + "` (" + Joiner.on(",").join(index) + ")");
     }
   }
 
