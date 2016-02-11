@@ -28,8 +28,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
 import ox.Json;
+import ox.Log;
 
 public class DB {
+
+  public static final boolean debug = false;
 
   private final HikariDataSource source;
   private String schema = null;
@@ -91,6 +94,8 @@ public class DB {
   }
 
   public List<Row> select(String query, Object... args) {
+    log(query);
+
     Connection conn = getConnection();
     PreparedStatement statement = null;
     ResultSet r = null;
@@ -144,6 +149,8 @@ public class DB {
 
     try {
       String s = Iterables.getFirst(rows, null).getInsertStatement(schema, table);
+      log(s);
+
       statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
       for (Row row : rows) {
         int c = 1;
@@ -172,6 +179,8 @@ public class DB {
   }
 
   public int update(String query, Object... args) {
+    log(query);
+
     Connection conn = getConnection();
     PreparedStatement statement = null;
     try {
@@ -204,6 +213,8 @@ public class DB {
     String query = "";
     try {
       query = getFirst(rows, null).getUpdateStatement(schema, table);
+      log(query);
+
       statement = conn.prepareStatement(query);
       for (Row row : rows) {
         int c = 1;
@@ -233,6 +244,8 @@ public class DB {
   }
 
   public Set<String> getSchemas() {
+    log("getSchemas()");
+    
     Set<String> ret = Sets.newHashSet();
     Connection c = getConnection();
     try {
@@ -254,6 +267,8 @@ public class DB {
   }
 
   public Set<String> getTables() {
+    log("getTables()");
+
     Set<String> ret = Sets.newHashSet();
     Connection c = getConnection();
     try {
@@ -312,6 +327,8 @@ public class DB {
   }
 
   public void execute(String statement) {
+    log(statement);
+
     Connection c = getConnection();
     try {
       Statement s = c.createStatement();
@@ -389,6 +406,12 @@ public class DB {
       return o.toString();
     }
     return o;
+  }
+
+  private void log(String query) {
+    if (debug) {
+      Log.debug(query);
+    }
   }
 
 }
