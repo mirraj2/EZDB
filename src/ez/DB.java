@@ -39,10 +39,19 @@ public class DB {
   private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
   public DB(String ip, String user, String pass, String schema) {
+    this(ip, user, pass, schema, false);
+  }
+
+  public DB(String ip, String user, String pass, String schema, boolean ssl) {
     this.schema = schema;
 
+    String url = "jdbc:mysql://" + ip + ":3306/" + schema;
+    if (ssl) {
+      url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
+    }
+
     source = new HikariDataSource();
-    source.setJdbcUrl("jdbc:mysql://" + ip + ":3306/" + schema);
+    source.setJdbcUrl(url);
     source.setUsername(user);
     source.setPassword(pass);
     source.setAutoCommit(true);
@@ -245,7 +254,7 @@ public class DB {
 
   public Set<String> getSchemas() {
     log("getSchemas()");
-    
+
     Set<String> ret = Sets.newHashSet();
     Connection c = getConnection();
     try {
