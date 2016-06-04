@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static ox.util.Functions.map;
+import static ox.util.Utils.first;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -249,7 +250,8 @@ public class DB {
 
   public int getCount(String countQuery, Object... args) {
     Row row = selectSingleRow(countQuery, args);
-    return row.getLong("count(*)").intValue();
+    Number n = (Number) first(row.map.values());
+    return n.intValue();
   }
 
   public Set<String> getSchemas() {
