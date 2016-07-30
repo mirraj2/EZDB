@@ -28,6 +28,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
+import ez.Table.Index;
 import ox.Json;
 import ox.Log;
 
@@ -304,10 +305,11 @@ public class DB {
     }
 
     execute(table.toSQL(schema));
-    for (List<String> index : table.indices) {
-      String indexName = Joiner.on("_").join(index);
-      index = map(index, s -> '`' + s + '`');
-      execute("ALTER TABLE `" + table.name + "` ADD INDEX `" + indexName + "` (" + Joiner.on(",").join(index) + ")");
+    for (Index index : table.indices) {
+      String indexName = Joiner.on("_").join(index.columns);
+      List<String> cols = map(index.columns, s -> '`' + s + '`');
+      String s = index.unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
+      execute("ALTER TABLE `" + table.name + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
     }
   }
 

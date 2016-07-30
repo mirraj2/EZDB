@@ -22,7 +22,7 @@ public class Table {
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
   private List<Integer> primaryIndices = Lists.newArrayList();
-  final List<List<String>> indices = Lists.newArrayList();
+  final List<Index> indices = Lists.newArrayList();
 
   public Table(String name) {
     this.name = name;
@@ -61,7 +61,12 @@ public class Table {
   }
 
   public Table index(String... columns) {
-    indices.add(ImmutableList.copyOf(columns));
+    indices.add(new Index(ImmutableList.copyOf(columns), false));
+    return this;
+  }
+
+  public Table uniqueIndex(String... columns) {
+    indices.add(new Index(ImmutableList.copyOf(columns), true));
     return this;
   }
 
@@ -160,6 +165,16 @@ public class Table {
   @Override
   public String toString() {
     return name;
+  }
+
+  static class Index {
+    public final List<String> columns;
+    public final boolean unique;
+
+    public Index(List<String> columns, boolean unique) {
+      this.columns = columns;
+      this.unique = unique;
+    }
   }
 
 }
