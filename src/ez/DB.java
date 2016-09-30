@@ -331,6 +331,23 @@ public class DB {
     execute("DELETE FROM " + schema + "." + table);
   }
 
+  public void addColumn(String table, String column, Class<?> columnType) {
+    String s = "ALTER TABLE `" + table + "` ADD `" + column + "` " + Table.getType(columnType);
+    // if (columnType == String.class) {
+    // s += " DEFAULT ''";
+    // }
+    execute(s);
+  }
+
+  public void addIndex(String table, String column, boolean unique) {
+    String s = "ALTER TABLE `" + table + "` ADD ";
+    if (unique) {
+      s += "UNIQUE ";
+    }
+    s += "(`" + column + "`)";
+    execute(s);
+  }
+
   public void deleteTable(String table) {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
   }

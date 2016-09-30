@@ -70,7 +70,7 @@ public class Table {
     return this;
   }
 
-  private String getType(Class<?> type) {
+  static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
     } else if (type == Integer.class) {
