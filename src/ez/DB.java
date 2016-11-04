@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import com.google.common.base.Joiner;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -149,8 +150,20 @@ public class DB {
     return null;
   }
 
-  public void insert(String table, Iterable<Row> rows) {
+  public void insert(String table, List<Row> rows) {
     if (Iterables.isEmpty(rows)) {
+      return;
+    }
+
+    // break the inserts into chunks
+    int chunkSize = 16000;
+    if (rows.size() > chunkSize) {
+      for (int i = 0; i < rows.size(); i += chunkSize) {
+        List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
+        Stopwatch watch = Stopwatch.createStarted();
+        insert(table, chunk);
+        Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
+      }
       return;
     }
 
@@ -159,18 +172,32 @@ public class DB {
     ResultSet generatedKeys = null;
 
     try {
-      String s = Iterables.getFirst(rows, null).getInsertStatement(schema, table);
+      Row firstRow = first(rows);
+      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(schema, table));
+      sb.append(" VALUES ");
+
+      final String placeholders = getInsertPlaceholders(firstRow.map.size());
+      for (int i = 0; i < rows.size(); i++) {
+        if (i != 0) {
+          sb.append(",");
+        }
+        sb.append(placeholders);
+      }
+
+      String s = sb.toString();
       log(s);
 
       statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
+
+      int c = 1;
       for (Row row : rows) {
-        int c = 1;
         for (Object o : row.map.values()) {
           statement.setObject(c++, convert(o));
         }
-        statement.addBatch();
+        // statement.addBatch();
       }
-      statement.executeBatch();
+      // statement.executeBatch();
+      statement.execute();
       generatedKeys = statement.getGeneratedKeys();
 
       Iterator<Row> iter = rows.iterator();
@@ -187,6 +214,17 @@ public class DB {
       close(conn);
     }
 
+  }
+
+  private String getInsertPlaceholders(int placeholderCount) {
+    final StringBuilder builder = new StringBuilder("(");
+    for (int i = 0; i < placeholderCount; i++) {
+      if (i != 0) {
+        builder.append(",");
+      }
+      builder.append("?");
+    }
+    return builder.append(")").toString();
   }
 
   public int update(String query, Object... args) {

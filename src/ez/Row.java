@@ -64,16 +64,22 @@ public class Row implements Iterable<String> {
   }
 
   String getInsertStatement(String schema, String table) {
+    String s = getInsertStatementFirstPart(schema, table);
+    s += " VALUES (";
+    for (int i = 0; i < map.size(); i++) {
+      s += "?,";
+    }
+    s = s.substring(0, s.length() - 1);
+    s += ")";
+    return s;
+  }
+
+  String getInsertStatementFirstPart(String schema, String table) {
     String s = "INSERT INTO `" + schema + "`.`" + table + "` (";
     for (String k : map.keySet()) {
       s += "`" + k + "`, ";
     }
     s = s.substring(0, s.length() - 2);
-    s += ") VALUES (";
-    for (int i = 0; i < map.size(); i++) {
-      s += "?,";
-    }
-    s = s.substring(0, s.length() - 1);
     s += ")";
     return s;
   }
