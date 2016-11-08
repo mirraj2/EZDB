@@ -32,6 +32,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import ez.Table.Index;
 import ox.Json;
 import ox.Log;
+import ox.Money;
 
 public class DB {
 
@@ -472,6 +473,8 @@ public class DB {
       return e.name();
     } else if (o instanceof Json) {
       return o.toString();
+    } else if (o instanceof Money) {
+      return ((Money) o).toInt();
     }
     return o;
   }

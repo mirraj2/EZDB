@@ -14,6 +14,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import ox.Json;
+import ox.Money;
 import ox.Reflection;
 
 public class Table {
@@ -73,7 +74,7 @@ public class Table {
   static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
-    } else if (type == Integer.class) {
+    } else if (type == Integer.class || type == Money.class) {
       return "INT";
     } else if (type == Double.class) {
       return "DOUBLE";

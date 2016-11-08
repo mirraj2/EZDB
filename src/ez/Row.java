@@ -110,6 +110,11 @@ public class Row implements Iterable<String> {
     return map;
   }
 
+  public Row remove(String key) {
+    map.remove(key);
+    return this;
+  }
+
   public Json toJson() {
     return toJson(ImmutableMap.of());
   }
