@@ -456,6 +456,8 @@ public class DB {
     }
   }
 
+  private final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
+
   private Object convert(Object o) {
     if (o == null) {
       return o;
@@ -475,8 +477,14 @@ public class DB {
       return o.toString();
     } else if (o instanceof Money) {
       return ((Money) o).toInt();
+    } else {
+      for (Class<?> c : whitelist) {
+        if (c.isInstance(o)) {
+          return o;
+        }
+      }
+      return o.toString();
     }
-    return o;
   }
 
   private void log(String query) {
