@@ -367,7 +367,7 @@ public class DB {
   }
 
   public void clearRows(String table) {
-    execute("DELETE FROM " + schema + "." + table);
+    execute("DELETE FROM `" + schema + "`.`" + table + "`");
   }
 
   public void addColumn(String table, String column, Class<?> columnType) {
