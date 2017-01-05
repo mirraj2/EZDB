@@ -391,6 +391,20 @@ public class DB {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
   }
 
+  public void renameColumn(String table, String oldName, String newName) {
+    Row row = selectSingleRow(
+        "SELECT DATA_TYPE as `type`, CHARACTER_MAXIMUM_LENGTH as `len` FROM INFORMATION_SCHEMA.COLUMNS"
+        + " WHERE table_name = ? AND COLUMN_NAME = ?", table, oldName);
+
+    String type = row.get("type");
+
+    if (type.equals("varchar")) {
+      type += "(" + row.getObject("len") + ")";
+    }
+
+    execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
+  }
+
   public void deleteColumn(String table, String column) {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
