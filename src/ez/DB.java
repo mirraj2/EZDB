@@ -4,7 +4,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
 import static ox.util.Utils.first;
-import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +13,7 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -103,7 +103,18 @@ public class DB {
   }
 
   public Row selectSingleRow(String query, Object... args) {
-    return only(select(query, args));
+    List<Row> rows = select(query, args);
+    if (rows.size() > 1) {
+      Log.debug("query: " + query);
+      Log.debug("args: " + Arrays.toString(args));
+      if (rows.size() < 10) {
+        for (Row row : rows) {
+          Log.debug(row);
+        }
+      }
+      throw new IllegalStateException("Expected one row, but found " + rows.size());
+    }
+    return rows.get(0);
   }
 
   public List<Row> select(String query, Object... args) {
@@ -397,8 +408,8 @@ public class DB {
 
   public void renameColumn(String table, String oldName, String newName) {
     Row row = selectSingleRow("SELECT DATA_TYPE as `type`, CHARACTER_MAXIMUM_LENGTH as `len`"
-        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND COLUMN_NAME = ?",
-        table, oldName);
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
+        schema, table, oldName);
 
     String type = row.get("type");
 
