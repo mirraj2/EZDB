@@ -5,6 +5,7 @@ import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
 import static ox.util.Utils.first;
 import static ox.util.Utils.only;
+import static ox.util.Utils.propagate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,7 +24,6 @@ import java.util.UUID;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -86,9 +86,9 @@ public class DB {
       try {
         conn.rollback();
       } catch (Exception ee) {
-        throw Throwables.propagate(ee);
+        throw propagate(ee);
       }
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       transactionConnections.remove();
       try {
@@ -131,7 +131,7 @@ public class DB {
       return ret;
     } catch (Exception e) {
       System.err.println("Problem with query: " + query);
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(r);
       close(statement);
@@ -208,7 +208,7 @@ public class DB {
       }
 
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(generatedKeys);
       close(statement);
@@ -242,7 +242,7 @@ public class DB {
       return statement.executeUpdate();
     } catch (Exception e) {
       System.err.println("query: " + query);
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(statement);
       close(conn);
@@ -281,7 +281,7 @@ public class DB {
       // statement.executeUpdate();
     } catch (Exception e) {
       System.err.println("query: " + query);
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(statement);
       close(conn);
@@ -306,7 +306,7 @@ public class DB {
         ret.add(rs.getString("TABLE_CAT").toLowerCase());
       }
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(c);
     }
@@ -329,7 +329,7 @@ public class DB {
         ret.add(rs.getString(3).toLowerCase());
       }
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(c);
     }
@@ -391,10 +391,14 @@ public class DB {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
   }
 
+  public void renameTable(String oldName, String newName) {
+    execute("RENAME TABLE `" + oldName + "` TO `" + newName + "`");
+  }
+
   public void renameColumn(String table, String oldName, String newName) {
-    Row row = selectSingleRow(
-        "SELECT DATA_TYPE as `type`, CHARACTER_MAXIMUM_LENGTH as `len` FROM INFORMATION_SCHEMA.COLUMNS"
-        + " WHERE table_name = ? AND COLUMN_NAME = ?", table, oldName);
+    Row row = selectSingleRow("SELECT DATA_TYPE as `type`, CHARACTER_MAXIMUM_LENGTH as `len`"
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND COLUMN_NAME = ?",
+        table, oldName);
 
     String type = row.get("type");
 
@@ -419,7 +423,7 @@ public class DB {
       s.close();
     } catch (Exception e) {
       System.err.println("Problem executing statement:\n " + statement);
-      throw Throwables.propagate(e);
+      throw propagate(e);
     } finally {
       close(c);
     }
@@ -466,7 +470,7 @@ public class DB {
     try {
       return source.getConnection();
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throw propagate(e);
     }
   }
 
