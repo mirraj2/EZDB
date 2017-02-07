@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
 import static ox.util.Utils.first;
+import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -114,7 +115,7 @@ public class DB {
       }
       throw new IllegalStateException("Expected one row, but found " + rows.size());
     }
-    return rows.get(0);
+    return only(rows);
   }
 
   public List<Row> select(String query, Object... args) {
