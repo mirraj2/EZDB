@@ -274,6 +274,7 @@ public class DB {
     PreparedStatement statement = null;
     String query = "";
     try {
+      Log.debug("Executing update. autocommit=" + conn.getAutoCommit());
       query = getFirst(rows, null).getUpdateStatement(schema, table);
       log(query);
 
