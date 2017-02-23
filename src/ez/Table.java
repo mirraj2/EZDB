@@ -34,7 +34,7 @@ public class Table {
   }
 
   public Table column(String name, String type) {
-    columns.put(name, type);
+    columns.put(name, type.toUpperCase());
     return this;
   }
 
