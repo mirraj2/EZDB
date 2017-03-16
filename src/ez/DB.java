@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +29,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
 import ez.Table.Index;
@@ -40,15 +42,22 @@ public class DB {
   public static final boolean debug = false;
 
   private final HikariDataSource source;
-  private String schema = null;
   private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
+
+  private final String ip, user, pass;
+  private String schema = null;
+  private boolean ssl;
 
   public DB(String ip, String user, String pass, String schema) {
     this(ip, user, pass, schema, false);
   }
 
   public DB(String ip, String user, String pass, String schema, boolean ssl) {
+    this.ip = ip;
+    this.user = user;
+    this.pass = pass;
     this.schema = schema;
+    this.ssl = ssl;
 
     String url = "jdbc:mysql://" + ip + ":3306/" + schema;
     if (ssl) {
@@ -71,9 +80,7 @@ public class DB {
       execute("Create Database " + schema);
     }
 
-    this.schema = schema;
-
-    return this;
+    return new DB(ip, user, pass, schema, ssl);
   }
 
   public DB transaction(Runnable r) {
@@ -370,11 +377,11 @@ public class DB {
   }
 
   public boolean hasTable(String table) {
-    return getTables().contains(table.toLowerCase());
+    return getTables(true).contains(table.toLowerCase());
   }
 
   public Set<String> getTables() {
-    return getTables(true);
+    return getTables(false);
   }
 
   public Set<String> getTables(boolean lowercase) {
@@ -403,7 +410,7 @@ public class DB {
   public void addTable(Table table) {
     checkNotNull(table);
 
-    if (getTables().contains(table.name)) {
+    if (getTables(true).contains(table.name)) {
       throw new IllegalArgumentException("Table already exists: " + table.name);
     }
 
@@ -436,10 +443,25 @@ public class DB {
 
   public void addColumn(String table, String column, Class<?> columnType) {
     String s = "ALTER TABLE `" + table + "` ADD `" + column + "` " + Table.getType(columnType);
-    // if (columnType == String.class) {
-    // s += " DEFAULT ''";
-    // }
     execute(s);
+  }
+
+  public Map<String, String> getColumns(String table) {
+    List<Row> rows = select("SELECT `COLUMN_NAME` as `name`, `DATA_TYPE` as `type`,"
+        + " `CHARACTER_MAXIMUM_LENGTH` as `len`"
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ?",
+        schema, table);
+
+    Map<String, String> ret = Maps.newLinkedHashMap();
+    for (Row row : rows) {
+      String type = row.get("type");
+      if (type.equals("varchar") || type.equals("char")) {
+        type += "(" + row.getObject("len") + ")";
+      }
+
+      ret.put(row.get("name"), type);
+    }
+    return ret;
   }
 
   public void addIndex(String table, String column, boolean unique) {
