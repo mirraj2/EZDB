@@ -163,6 +163,46 @@ public class DB {
     return null;
   }
 
+  public <T> void insertRawRows(String table, List<List<T>> rows) {
+    if (rows.isEmpty()) {
+      return;
+    }
+
+    Connection conn = getConnection();
+    PreparedStatement statement = null;
+
+    try {
+      StringBuilder sb = new StringBuilder("INSERT INTO `" + schema + "`.`" + table + "` VALUES ");
+
+      final String placeholders = getInsertPlaceholders(rows.get(0).size());
+      for (int i = 0; i < rows.size(); i++) {
+        if (i != 0) {
+          sb.append(",");
+        }
+        sb.append(placeholders);
+      }
+
+      String s = sb.toString();
+      log(s);
+
+      statement = conn.prepareStatement(s, Statement.NO_GENERATED_KEYS);
+
+      int c = 1;
+      for (List<? extends Object> row : rows) {
+        for (Object o : row) {
+          statement.setObject(c++, o);
+        }
+      }
+      statement.execute();
+
+    } catch (Exception e) {
+      throw propagate(e);
+    } finally {
+      close(statement);
+      close(conn);
+    }
+  }
+
   public void insert(String table, List<Row> rows) {
     if (Iterables.isEmpty(rows)) {
       return;
@@ -238,6 +278,10 @@ public class DB {
       builder.append("?");
     }
     return builder.append(")").toString();
+  }
+
+  public void truncate(String tableName) {
+    update("TRUNCATE table `" + tableName + "`");
   }
 
   public int update(String query, Object... args) {
@@ -330,6 +374,10 @@ public class DB {
   }
 
   public Set<String> getTables() {
+    return getTables(true);
+  }
+
+  public Set<String> getTables(boolean lowercase) {
     log("getTables()");
 
     Set<String> ret = Sets.newHashSet();
@@ -338,7 +386,11 @@ public class DB {
       ResultSet rs = c.getMetaData().getTables(schema, null, "%", null);
 
       while (rs.next()) {
-        ret.add(rs.getString(3).toLowerCase());
+        String s = rs.getString(3);
+        if (lowercase) {
+          s = s.toLowerCase();
+        }
+        ret.add(s);
       }
     } catch (Exception e) {
       throw propagate(e);
