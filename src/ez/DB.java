@@ -377,7 +377,9 @@ public class DB {
   }
 
   public boolean hasTable(String table) {
-    return getTables(true).contains(table.toLowerCase());
+    return null != selectSingleRow("SELECT `COLUMN_NAME`"
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? limit 1",
+        schema, table);
   }
 
   public Set<String> getTables() {
@@ -581,6 +583,8 @@ public class DB {
       return o.toString();
     } else if (o instanceof Money) {
       return ((Money) o).toInt();
+    } else if (o.getClass().isArray()) {
+      return o;
     } else {
       for (Class<?> c : whitelist) {
         if (c.isInstance(o)) {
