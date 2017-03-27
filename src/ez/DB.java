@@ -1,5 +1,6 @@
 package ez;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
@@ -44,9 +46,9 @@ public class DB {
   private final HikariDataSource source;
   private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
-  private final String ip, user, pass;
-  private String schema = null;
-  private boolean ssl;
+  public final String ip, user, pass;
+  public final String schema;
+  public final boolean ssl;
 
   public DB(String ip, String user, String pass, String schema) {
     this(ip, user, pass, schema, false);
@@ -72,15 +74,23 @@ public class DB {
   }
 
   public DB usingSchema(String schema) {
+    checkArgument(isValidName(schema));
     if (Strings.isNullOrEmpty(schema)) {
       schema = null;
     }
 
     if (!getSchemas().contains(schema.toLowerCase())) {
-      execute("Create Database " + schema);
+      execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_bin");
     }
 
     return new DB(ip, user, pass, schema, ssl);
+  }
+
+  /**
+   * Checks if this is a valid name for a table, column, etc. Must consist of only letters, numbers, and underscores.
+   */
+  public static boolean isValidName(String name) {
+    return Pattern.matches("^[a-z][a-z0-9_.]*$", name);
   }
 
   public DB transaction(Runnable r) {
