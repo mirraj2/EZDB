@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -585,7 +584,7 @@ public class DB {
     } else if (o instanceof LocalDate) {
       return java.sql.Date.valueOf((LocalDate) o);
     } else if (o instanceof Instant) {
-      return Date.from((Instant) o);
+      return ((Instant) o).toEpochMilli();
     } else if (o.getClass().isEnum()) {
       Enum<?> e = (Enum<?>) o;
       return e.name();

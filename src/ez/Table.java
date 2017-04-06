@@ -2,6 +2,7 @@ package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static ox.util.Functions.map;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -78,7 +79,7 @@ public class Table {
       return "INT";
     } else if (type == Double.class) {
       return "DOUBLE";
-    } else if (type == Long.class) {
+    } else if (type == Long.class || type == Instant.class) {
       return "BIGINT";
     } else if (type == Boolean.class) {
       return "TINYINT(1)";
