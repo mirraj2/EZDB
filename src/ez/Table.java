@@ -2,6 +2,7 @@ package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static ox.util.Functions.map;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,10 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import ox.Json;
 import ox.Money;
 import ox.Reflection;

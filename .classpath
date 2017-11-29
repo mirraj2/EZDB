@@ -7,6 +7,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/slf4j-simple-1.7.2.jar"/>
 	<classpathentry kind="lib" path="lib/HikariCP-2.4.7.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Ox"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ox"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
