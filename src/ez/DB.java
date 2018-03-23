@@ -7,6 +7,7 @@ import static ox.util.Functions.map;
 import static ox.util.Utils.first;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
@@ -33,6 +35,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
+
 import ez.Table.Index;
 import ox.Json;
 import ox.Log;
@@ -298,6 +301,10 @@ public class DB {
 
   public void truncate(String tableName) {
     update("TRUNCATE table `" + tableName + "`");
+  }
+
+  public int delete(String query, Object... args) {
+    return update(query, args);
   }
 
   public int update(String query, Object... args) {
