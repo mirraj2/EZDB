@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
@@ -167,6 +168,20 @@ public class DB {
       close(r);
       close(statement);
       close(conn);
+    }
+  }
+
+  public void stream(String query, Consumer<Row> callback, Object... args) {
+    int offset = 0;
+    int chunkSize = 1000;
+
+    while (true) {
+      List<Row> rows = select(query + " LIMIT " + offset + ", " + chunkSize, args);
+      rows.forEach(callback::accept);
+      offset += chunkSize;
+      if (rows.size() < chunkSize) {
+        break;
+      }
     }
   }
 
