@@ -486,7 +486,11 @@ public class DB {
   }
 
   public void addColumn(String table, String column, Class<?> columnType) {
-    String s = "ALTER TABLE `" + table + "` ADD `" + column + "` " + Table.getType(columnType);
+    addColumn(table, column, Table.getType(columnType));
+  }
+
+  public void addColumn(String table, String column, String columnType) {
+    String s = "ALTER TABLE `" + table + "` ADD `" + column + "` " + columnType;
     execute(s);
   }
 
