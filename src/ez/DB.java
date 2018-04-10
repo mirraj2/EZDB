@@ -64,9 +64,9 @@ public class DB {
     this.schema = schema;
     this.ssl = ssl;
 
-    String url = "jdbc:mysql://" + ip + ":3306/" + schema;
+    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=utf8";
     if (ssl) {
-      url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
+      url += "&requireSSL=true&useSSL=true&verifyServerCertificate=true";
     }
 
     source = new HikariDataSource();
