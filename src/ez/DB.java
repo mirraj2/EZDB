@@ -172,12 +172,15 @@ public class DB {
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
+    streamBulk(query, rows -> rows.forEach(callback::accept), 1000, args);
+  }
+
+  public void streamBulk(String query, Consumer<List<Row>> callback, int chunkSize, Object... args) {
     int offset = 0;
-    int chunkSize = 1000;
 
     while (true) {
       List<Row> rows = select(query + " LIMIT " + offset + ", " + chunkSize, args);
-      rows.forEach(callback::accept);
+      callback.accept(rows);
       offset += chunkSize;
       if (rows.size() < chunkSize) {
         break;
@@ -237,7 +240,15 @@ public class DB {
     }
   }
 
+  public void replace(String table, List<Row> rows) {
+    insert(table, rows, true);
+  }
+
   public void insert(String table, List<Row> rows) {
+    insert(table, rows, false);
+  }
+
+  private void insert(String table, List<Row> rows, boolean replace) {
     if (Iterables.isEmpty(rows)) {
       return;
     }
@@ -260,7 +271,7 @@ public class DB {
 
     try {
       Row firstRow = first(rows);
-      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(schema, table));
+      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(schema, table, replace));
       sb.append(" VALUES ");
 
       final String placeholders = getInsertPlaceholders(firstRow.map.size());

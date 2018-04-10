@@ -6,8 +6,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+
 import ox.Json;
 import ox.util.Utils;
 
@@ -64,7 +66,7 @@ public class Row implements Iterable<String> {
   }
 
   String getInsertStatement(String schema, String table) {
-    String s = getInsertStatementFirstPart(schema, table);
+    String s = getInsertStatementFirstPart(schema, table, false);
     s += " VALUES (";
     for (int i = 0; i < map.size(); i++) {
       s += "?,";
@@ -74,8 +76,9 @@ public class Row implements Iterable<String> {
     return s;
   }
 
-  String getInsertStatementFirstPart(String schema, String table) {
-    String s = "INSERT INTO `" + schema + "`.`" + table + "` (";
+  String getInsertStatementFirstPart(String schema, String table, boolean replace) {
+    String action = replace ? "REPLACE" : "INSERT";
+    String s = action + " INTO `" + schema + "`.`" + table + "` (";
     for (String k : map.keySet()) {
       s += "`" + k + "`, ";
     }
