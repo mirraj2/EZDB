@@ -299,7 +299,7 @@ public class DB {
       generatedKeys = statement.getGeneratedKeys();
 
       Iterator<Row> iter = rows.iterator();
-      while (generatedKeys.next()) {
+      while (generatedKeys.next() && iter.hasNext()) {
         long id = generatedKeys.getLong(1);
         iter.next().with("id", id);
       }
