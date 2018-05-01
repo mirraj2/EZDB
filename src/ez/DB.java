@@ -240,6 +240,10 @@ public class DB {
     }
   }
 
+  public void replace(String table, Row row) {
+    replace(table, ImmutableList.of(row));
+  }
+
   public void replace(String table, List<Row> rows) {
     insert(table, rows, true);
   }
@@ -516,6 +520,8 @@ public class DB {
     String s = "ALTER TABLE `" + table + "` ADD ";
     if (unique) {
       s += "UNIQUE ";
+    } else {
+      s += "INDEX ";
     }
     s += "(`" + column + "`)";
     execute(s);
@@ -644,6 +650,57 @@ public class DB {
   private void log(String query) {
     if (debug) {
       Log.debug(query);
+    }
+  }
+
+  public static class ColumnBuilder {
+
+    private String table, name, type, after;
+    private boolean index = false;
+
+    private ColumnBuilder(String table) {
+      this.table = table;
+    }
+
+    public ColumnBuilder name(String name) {
+      this.name = name;
+      return this;
+    }
+
+    public ColumnBuilder type(Class<?> type) {
+      return type(Table.getType(type));
+    }
+
+    public ColumnBuilder type(String type) {
+      this.type = type;
+      return this;
+    }
+
+    public ColumnBuilder after(String columnName) {
+      this.after = columnName;
+      return this;
+    }
+
+    public ColumnBuilder index() {
+      index = true;
+      return this;
+    }
+
+    public void execute(DB db) {
+      StringBuilder sb = new StringBuilder("ALTER TABLE `");
+      sb.append(table).append("` ADD `").append(name).append("` ").append(type);
+      if (after != null) {
+        sb.append(" AFTER `").append(after).append('`');
+      }
+      db.execute(sb.toString());
+
+      if (index) {
+        db.addIndex(table, name, false);
+      }
+    }
+
+    public static ColumnBuilder table(String table) {
+      return new ColumnBuilder(table);
     }
   }
 
