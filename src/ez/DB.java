@@ -153,9 +153,10 @@ public class DB {
       r = statement.executeQuery();
       List<Row> ret = Lists.newArrayList();
       ResultSetMetaData meta = r.getMetaData();
+      int columnCount = meta.getColumnCount();
       while (r.next()) {
-        Row row = new Row();
-        for (int i = 1; i <= meta.getColumnCount(); i++) {
+        Row row = new Row(columnCount);
+        for (int i = 1; i <= columnCount; i++) {
           row.with(meta.getColumnLabel(i), r.getObject(i));
         }
         ret.add(row);

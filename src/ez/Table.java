@@ -132,7 +132,7 @@ public class Table {
   public Row toRow(Object o) {
     checkNotNull(o);
 
-    Row row = new Row();
+    Row row = new Row(columns.size());
 
     for (String column : columns.keySet()) {
       Object value = Reflection.get(o, column);

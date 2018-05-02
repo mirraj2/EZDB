@@ -15,7 +15,15 @@ import ox.util.Utils;
 
 public class Row implements Iterable<String> {
 
-  final Map<String, Object> map = Maps.newLinkedHashMap();
+  final Map<String, Object> map;
+
+  public Row() {
+    this(16);
+  }
+
+  public Row(int expectedSize) {
+    map = Maps.newLinkedHashMapWithExpectedSize(expectedSize);
+  }
 
   public Row with(String key, Object value) {
     map.put(key, value);
@@ -109,10 +117,6 @@ public class Row implements Iterable<String> {
     return map.keySet().iterator();
   }
 
-  public Map<String, Object> getMap() {
-    return map;
-  }
-
   public Row remove(String key) {
     map.remove(key);
     return this;
@@ -124,7 +128,7 @@ public class Row implements Iterable<String> {
 
   public Json toJson(Map<String, String> keyTransform) {
     Json ret = Json.object();
-    getMap().forEach((key, value) -> {
+    map.forEach((key, value) -> {
       key = keyTransform.getOrDefault(key, key);
       add(ret, key, value);
     });
