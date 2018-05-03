@@ -264,7 +264,7 @@ public class DB {
       for (int i = 0; i < rows.size(); i += chunkSize) {
         List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
         Stopwatch watch = Stopwatch.createStarted();
-        insert(table, chunk);
+        insert(table, chunk, replace);
         Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
       }
       return;
