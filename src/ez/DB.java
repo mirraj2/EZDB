@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -139,7 +140,28 @@ public class DB {
   }
 
   public List<Row> select(String query, Object... args) {
-    log(query);
+    List<Row> ret = Lists.newArrayList();
+    stream(query, row -> {
+      ret.add(row);
+    }, false, args);
+    return ret;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> List<T> selectSingleColumn(String query, Object... args) {
+    List<T> ret = Lists.newArrayList();
+    select(query, r -> {
+      try {
+        ret.add((T) r.getObject(1));
+      } catch (SQLException e) {
+        throw propagate(e);
+      }
+    }, args);
+    return ret;
+  }
+
+  private void select(String query, Consumer<ResultSet> rowCallback, Object... args) {
+    log(query, args);
 
     Connection conn = getConnection();
     PreparedStatement statement = null;
@@ -151,17 +173,9 @@ public class DB {
         statement.setObject(c + 1, convert(args[c]));
       }
       r = statement.executeQuery();
-      List<Row> ret = Lists.newArrayList();
-      ResultSetMetaData meta = r.getMetaData();
-      int columnCount = meta.getColumnCount();
       while (r.next()) {
-        Row row = new Row(columnCount);
-        for (int i = 1; i <= columnCount; i++) {
-          row.with(meta.getColumnLabel(i), r.getObject(i));
-        }
-        ret.add(row);
+        rowCallback.accept(r);
       }
-      return ret;
     } catch (Exception e) {
       System.err.println("Problem with query: " + query);
       throw propagate(e);
@@ -173,7 +187,34 @@ public class DB {
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
-    streamBulk(query, rows -> rows.forEach(callback::accept), 1000, args);
+    stream(query, callback, true, args);
+  }
+
+  private void stream(String query, Consumer<Row> callback, boolean reuseRows, Object... args) {
+    Row row = new Row();
+    List<String> labels = Lists.newArrayList();
+    select(query, r -> {
+      try {
+        if (labels.isEmpty()) {
+          ResultSetMetaData metadata = r.getMetaData();
+          for (int i = 1; i <= metadata.getColumnCount(); i++) {
+            labels.add(metadata.getColumnLabel(i));
+          }
+        }
+        Row theRow = row;
+        if (reuseRows) {
+          theRow.map.clear();
+        } else {
+          theRow = new Row();
+        }
+        for (int i = 1; i <= labels.size(); i++) {
+          theRow.with(labels.get(i - 1), r.getObject(i));
+        }
+        callback.accept(theRow);
+      } catch (SQLException e) {
+        throw propagate(e);
+      }
+    }, args);
   }
 
   public void streamBulk(String query, Consumer<List<Row>> callback, int chunkSize, Object... args) {
@@ -648,8 +689,14 @@ public class DB {
     }
   }
 
-  private void log(String query) {
+  private void log(String query, Object... args) {
     if (debug) {
+      if (args.length > 0) {
+        query += " [" + Arrays.toString(args) + "]";
+      }
+      if (query.length() > 1000) {
+        query = query.substring(0, 1000);
+      }
       Log.debug(query);
     }
   }
