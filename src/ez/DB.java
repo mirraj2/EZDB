@@ -703,7 +703,7 @@ public class DB {
 
   public static class ColumnBuilder {
 
-    private String table, name, type, after;
+    private String table, name, type, defaultValue, after;
     private boolean index = false;
 
     private ColumnBuilder(String table) {
@@ -724,6 +724,11 @@ public class DB {
       return this;
     }
 
+    public ColumnBuilder defaultValue(String defaultValue) {
+      this.defaultValue = defaultValue;
+      return this;
+    }
+
     public ColumnBuilder after(String columnName) {
       this.after = columnName;
       return this;
@@ -737,6 +742,9 @@ public class DB {
     public void execute(DB db) {
       StringBuilder sb = new StringBuilder("ALTER TABLE `");
       sb.append(table).append("` ADD `").append(name).append("` ").append(type);
+      if (defaultValue != null) {
+        sb.append(" DEFAULT '").append(defaultValue).append("'");
+      }
       if (after != null) {
         sb.append(" AFTER `").append(after).append('`');
       }
