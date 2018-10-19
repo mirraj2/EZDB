@@ -755,6 +755,10 @@ public class DB {
       }
     }
 
+    public static ColumnBuilder create(String table, String name, Class<?> type) {
+      return new ColumnBuilder(table).name(name).type(type);
+    }
+
     public static ColumnBuilder table(String table) {
       return new ColumnBuilder(table);
     }
