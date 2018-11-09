@@ -338,9 +338,7 @@ public class DB {
         for (Object o : row.map.values()) {
           statement.setObject(c++, convert(o));
         }
-        // statement.addBatch();
       }
-      // statement.executeBatch();
       statement.execute();
       generatedKeys = statement.getGeneratedKeys();
 
@@ -429,7 +427,6 @@ public class DB {
         statement.addBatch();
       }
       statement.executeBatch();
-      // statement.executeUpdate();
     } catch (Exception e) {
       System.err.println("query: " + query);
       throw propagate(e);
