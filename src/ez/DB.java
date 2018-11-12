@@ -588,6 +588,11 @@ public class DB {
     execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
   }
 
+  public void changeColumnType(String table, String columnName, String columnType) {
+    execute("ALTER TABLE `" + schema + "`.`" + table +
+        "` CHANGE `" + columnName + "` `" + columnName + "` " + columnType);
+  }
+
   public void deleteColumn(String table, String column) {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
