@@ -436,10 +436,10 @@ public class DB {
     }
   }
 
-  public int getCount(String countQuery, Object... args) {
+  public long getCount(String countQuery, Object... args) {
     Row row = selectSingleRow(countQuery, args);
     Number n = (Number) first(row.map.values());
-    return n.intValue();
+    return n.longValue();
   }
 
   public Set<String> getSchemas() {
