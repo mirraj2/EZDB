@@ -116,7 +116,7 @@ public class Table {
     }
     s = s.substring(0, s.length() - 2);
     s += ")\n";
-    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;";
 
     return s;
   }

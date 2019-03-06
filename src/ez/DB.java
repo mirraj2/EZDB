@@ -65,7 +65,7 @@ public class DB {
     this.schema = schema;
     this.ssl = ssl;
 
-    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=utf8";
+    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=UTF-8";
     if (ssl) {
       url += "&requireSSL=true&useSSL=true&verifyServerCertificate=true";
     }
@@ -84,7 +84,7 @@ public class DB {
     }
 
     if (!getSchemas().contains(schema.toLowerCase())) {
-      execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_bin");
+      execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin");
     }
 
     return new DB(ip, user, pass, schema, ssl);
@@ -336,7 +336,8 @@ public class DB {
       int c = 1;
       for (Row row : rows) {
         for (Object o : row.map.values()) {
-          statement.setObject(c++, convert(o));
+          Object converted = convert(o);
+          statement.setObject(c++, converted);
         }
       }
       statement.execute();

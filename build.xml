@@ -18,7 +18,7 @@
     </path>
     <path id="EZDB.classpath">
         <pathelement location="bin"/>
-        <pathelement location="lib/mysql-connector-java-5.1.32-bin.jar"/>
+        <pathelement location="lib/mysql-connector-java-8.0.15.jar"/>
         <pathelement location="lib/HikariCP-2.4.7.jar"/>
         <pathelement location="lib/slf4j-api-1.7.2.jar"/>
         <pathelement location="lib/javassist-3.18.2-GA.jar"/>
