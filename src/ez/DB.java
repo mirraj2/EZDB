@@ -291,25 +291,28 @@ public class DB {
    * primary key or unique index)
    */
   public void replace(String table, List<Row> rows) {
-    insert(table, rows, true);
+    insert(table, rows, 16_000, true);
   }
 
   public void insert(String table, List<Row> rows) {
-    insert(table, rows, false);
+    insert(table, rows, 16_000);
   }
 
-  private void insert(String table, List<Row> rows, boolean replace) {
+  public void insert(String table, List<Row> rows, int chunkSize) {
+    insert(table, rows, chunkSize, false);
+  }
+
+  private void insert(String table, List<Row> rows, int chunkSize, boolean replace) {
     if (Iterables.isEmpty(rows)) {
       return;
     }
 
     // break the inserts into chunks
-    int chunkSize = 16000;
     if (rows.size() > chunkSize) {
       for (int i = 0; i < rows.size(); i += chunkSize) {
         List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
         Stopwatch watch = Stopwatch.createStarted();
-        insert(table, chunk, replace);
+        insert(table, chunk, chunkSize, replace);
         Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
       }
       return;
