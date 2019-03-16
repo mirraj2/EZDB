@@ -286,6 +286,10 @@ public class DB {
     replace(table, ImmutableList.of(row));
   }
 
+  /**
+   * REPLACE works exactly like INSERT, except that the old row is deleted before the new row is inserted (based on
+   * primary key or unique index)
+   */
   public void replace(String table, List<Row> rows) {
     insert(table, rows, true);
   }
