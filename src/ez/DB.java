@@ -511,10 +511,7 @@ public class DB {
 
     execute(table.toSQL(schema));
     for (Index index : table.indices) {
-      String indexName = Joiner.on("_").join(index.columns);
-      List<String> cols = map(index.columns, s -> '`' + s + '`');
-      String s = index.unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
-      execute("ALTER TABLE `" + table.name + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
+      addIndex(table.name, index.columns, index.unique);
     }
   }
 
@@ -564,14 +561,14 @@ public class DB {
   }
 
   public void addIndex(String table, String column, boolean unique) {
-    String s = "ALTER TABLE `" + table + "` ADD ";
-    if (unique) {
-      s += "UNIQUE ";
-    } else {
-      s += "INDEX ";
-    }
-    s += "(`" + column + "`)";
-    execute(s);
+    addIndex(table, ImmutableList.of(column), unique);
+  }
+
+  public void addIndex(String table, Collection<String> columns, boolean unique) {
+    String indexName = Joiner.on("_").join(columns);
+    List<String> cols = map(columns, s -> '`' + s + '`');
+    String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
+    execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
   }
 
   public void deleteTable(String table) {
