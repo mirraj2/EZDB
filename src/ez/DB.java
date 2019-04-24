@@ -65,7 +65,7 @@ public class DB {
     this.schema = schema;
     this.ssl = ssl;
 
-    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=UTF-8";
+    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=UTF-8&serverTimezone=UTC";
     if (ssl) {
       url += "&requireSSL=true&useSSL=true&verifyServerCertificate=true";
     }
