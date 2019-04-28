@@ -5,7 +5,7 @@
 	<classpathentry exported="true" kind="lib" path="lib/javassist-3.18.2-GA.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/slf4j-simple-1.7.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/HikariCP-2.4.7.jar"/>
-	<classpathentry kind="lib" path="lib/mysql-connector-java-8.0.15.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.46.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="module" value="true"/>

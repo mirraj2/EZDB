@@ -65,9 +65,13 @@ public class DB {
     this.schema = schema;
     this.ssl = ssl;
 
-    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=UTF-8&serverTimezone=UTC";
+    String url = "jdbc:mysql://" + ip + ":3306/" + schema + "?characterEncoding=UTF-8";
+    // url += "&useLegacyDatetimeCode=false";
+    // url += "&serverTimezone=UTC";
     if (ssl) {
       url += "&requireSSL=true&useSSL=true&verifyServerCertificate=true";
+    } else {
+      url += "&useSSL=false";
     }
 
     source = new HikariDataSource();
