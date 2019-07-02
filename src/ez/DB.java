@@ -715,7 +715,7 @@ public class DB {
   public static class ColumnBuilder {
 
     private String table, name, type, defaultValue, after;
-    private boolean index = false;
+    private boolean index = false, unique = false;
 
     private ColumnBuilder(String table) {
       this.table = table;
@@ -750,6 +750,12 @@ public class DB {
       return this;
     }
 
+    public ColumnBuilder uniqueIndex() {
+      index = true;
+      unique = true;
+      return this;
+    }
+
     public void execute(DB db) {
       StringBuilder sb = new StringBuilder("ALTER TABLE `");
       sb.append(table).append("` ADD `").append(name).append("` ").append(type);
@@ -762,7 +768,7 @@ public class DB {
       db.execute(sb.toString());
 
       if (index) {
-        db.addIndex(table, name, false);
+        db.addIndex(table, name, unique);
       }
     }
 
