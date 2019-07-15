@@ -687,7 +687,7 @@ public class DB {
     } else if (o instanceof Json) {
       return o.toString();
     } else if (o instanceof Money) {
-      return ((Money) o).toInt();
+      return ((Money) o).toLong();
     } else if (o.getClass().isArray()) {
       return o;
     } else {
