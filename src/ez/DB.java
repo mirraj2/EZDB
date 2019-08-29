@@ -575,6 +575,10 @@ public class DB {
     execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
   }
 
+  public void removeIndex(String table, String indexName) {
+    execute("ALTER TABLE `" + table + "` DROP INDEX `" + indexName + "`");
+  }
+
   public void deleteTable(String table) {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
   }
