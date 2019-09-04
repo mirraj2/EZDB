@@ -66,18 +66,20 @@ public class DB {
     this.ssl = ssl;
 
     String url = "jdbc:mysql://" + ip + ":3306/" + schema;
-//     url += "&useLegacyDatetimeCode=false";
-//     url += "&serverTimezone=UTC";
     if (ssl) {
       url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
     } else {
       url += "?useSSL=false";
     }
+    // url += "&useLegacyDatetimeCode=false";
+    // url += "&serverTimezone=UTC";
+    url += "&characterEncoding=utf8";
 
     source = new HikariDataSource();
     source.setJdbcUrl(url);
     source.setUsername(user);
     source.setPassword(pass);
+    source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
   }
 
