@@ -79,8 +79,28 @@ public class DB {
     source.setJdbcUrl(url);
     source.setUsername(user);
     source.setPassword(pass);
-    source.setConnectionInitSql("SET NAMES utf8mb4");
+    // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  /**
+   * Creates the schema if it doesn't already exist.
+   */
+  public DB ensureSchemaExists() {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      close(connection);
+    } catch (Exception e) {
+      if (!e.getMessage().contains("Unknown database")) {
+        throw propagate(e);
+      }
+      Log.info("Creating schema: " + schema);
+      DB temp = new DB(ip, user, pass, "", ssl);
+      temp.createSchema(schema);
+      temp.shutdown();
+    }
+    return this;
   }
 
   public DB usingSchema(String schema) {
@@ -90,10 +110,14 @@ public class DB {
     }
 
     if (!getSchemas().contains(schema.toLowerCase())) {
-      execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin");
+      createSchema(schema);
     }
 
     return new DB(ip, user, pass, schema, ssl);
+  }
+
+  public void createSchema(String schema) {
+    execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin");
   }
 
   /**
@@ -671,6 +695,13 @@ public class DB {
     } catch (Exception e) {
       throw propagate(e);
     }
+  }
+
+  /**
+   * Closes all connections to this database. Future queries using this DB object will fail.
+   */
+  public void shutdown() {
+    source.close();
   }
 
   private final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
