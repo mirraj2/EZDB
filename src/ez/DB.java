@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
 import static ox.util.Utils.first;
+import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 
@@ -30,7 +31,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -62,7 +62,7 @@ public class DB {
     this.ip = ip;
     this.user = user;
     this.pass = pass;
-    this.schema = schema;
+    this.schema = normalize(schema);
     this.ssl = ssl;
 
     String url = "jdbc:mysql://" + ip + ":3306/" + schema;
@@ -104,16 +104,22 @@ public class DB {
   }
 
   public DB usingSchema(String schema) {
-    checkArgument(isValidName(schema));
-    if (Strings.isNullOrEmpty(schema)) {
-      schema = null;
+    schema = normalize(schema);
+    if (!schema.isEmpty()) {
+      checkArgument(isValidName(schema));
+      if (!getSchemas().contains(schema.toLowerCase())) {
+        createSchema(schema);
+      }
     }
-
-    if (!getSchemas().contains(schema.toLowerCase())) {
-      createSchema(schema);
-    }
-
     return new DB(ip, user, pass, schema, ssl);
+  }
+
+  /**
+   * Imports a table into the current schema.
+   */
+  public DB importTable(String fromSchema, String tableName) {
+    execute("RENAME TABLE `" + fromSchema + "`.`" + tableName + "` TO `" + tableName + "`");
+    return this;
   }
 
   public void createSchema(String schema) {
