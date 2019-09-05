@@ -1,6 +1,7 @@
 package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Functions.map;
 
 import java.time.Instant;
@@ -10,12 +11,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import ox.Json;
 import ox.Money;
@@ -26,8 +29,11 @@ public class Table {
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
-  private List<Integer> primaryIndices = Lists.newArrayList();
+  private final List<Integer> primaryIndices = Lists.newArrayList();
+  private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
+
+  private String lastColumnAdded = "";
 
   public Table(String name) {
     this.name = name;
@@ -39,6 +45,7 @@ public class Table {
 
   public Table column(String name, String type) {
     columns.put(name, type.toUpperCase());
+    lastColumnAdded = name;
     return this;
   }
 
@@ -61,12 +68,28 @@ public class Table {
 
   public Table primary(String name, String type) {
     primaryIndices.add(columns.size());
-    columns.put(name, type);
+    column(name, type);
     return this;
+  }
+
+  public Table index() {
+    return index(lastColumnAdded);
   }
 
   public Table index(String... columns) {
     indices.add(new Index(ImmutableList.copyOf(columns), false));
+    return this;
+  }
+
+  /**
+   * @param autoConvertStrings Automatically converts empty strings to 'null' when storing into the database and
+   *                           converts 'null' into the empty string when reading from the database. Useful for String
+   *                           columns which have a unique index.
+   */
+  public Table uniqueIndex(boolean autoConvertStrings) {
+    checkState(!lastColumnAdded.isEmpty());
+    autoConvertColumns.add(lastColumnAdded);
+    uniqueIndex(lastColumnAdded);
     return this;
   }
 
@@ -144,6 +167,11 @@ public class Table {
       } else if (value instanceof Iterable) {
         value = Json.array((Iterable<?>) value);
       }
+      if (autoConvertColumns.contains(column)) {
+        if ("".equals(value)) {
+          value = null;
+        }
+      }
       row.with(column, value);
     }
 
@@ -165,6 +193,9 @@ public class Table {
 
     T ret = Reflection.newInstance(c);
     row.map.forEach((k, v) -> {
+      if (v == null && autoConvertColumns.contains(k)) {
+        v = "";
+      }
       Reflection.set(ret, k, v);
     });
     return ret;
