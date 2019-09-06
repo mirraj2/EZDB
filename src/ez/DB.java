@@ -620,15 +620,11 @@ public class DB {
   }
 
   public void renameColumn(String table, String oldName, String newName) {
-    Row row = selectSingleRow("SELECT DATA_TYPE as `type`, CHARACTER_MAXIMUM_LENGTH as `len`"
+    Row row = selectSingleRow("SELECT COLUMN_TYPE"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
         schema, table, oldName);
 
-    String type = row.get("type");
-
-    if (type.equals("varchar")) {
-      type += "(" + row.getObject("len") + ")";
-    }
+    String type = row.get("COLUMN_TYPE");
 
     execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
   }
