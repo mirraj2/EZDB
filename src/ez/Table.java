@@ -93,6 +93,10 @@ public class Table {
     return this;
   }
 
+  public Table uniqueIndex() {
+    return uniqueIndex(lastColumnAdded);
+  }
+
   public Table uniqueIndex(String... columns) {
     indices.add(new Index(ImmutableList.copyOf(columns), true));
     return this;
