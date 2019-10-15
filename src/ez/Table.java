@@ -7,6 +7,7 @@ import static ox.util.Functions.map;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +123,8 @@ public class Table {
       return "VARCHAR(63)";
     } else if (type == LocalDate.class) {
       return "DATE";
+    } else if (type == LocalTime.class) {
+      return "CHAR(5)";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }
