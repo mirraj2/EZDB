@@ -278,7 +278,7 @@ public class DB {
     return null;
   }
 
-  public <T> void insertRawRows(String table, List<List<T>> rows) {
+  public void insertRawRows(String table, List<? extends Iterable<?>> rows) {
     if (rows.isEmpty()) {
       return;
     }
@@ -289,7 +289,7 @@ public class DB {
     try {
       StringBuilder sb = new StringBuilder("INSERT INTO `" + schema + "`.`" + table + "` VALUES ");
 
-      final String placeholders = getInsertPlaceholders(rows.get(0).size());
+      final String placeholders = getInsertPlaceholders(Iterables.size(rows.get(0)));
       for (int i = 0; i < rows.size(); i++) {
         if (i != 0) {
           sb.append(",");
@@ -303,7 +303,7 @@ public class DB {
       statement = conn.prepareStatement(s, Statement.NO_GENERATED_KEYS);
 
       int c = 1;
-      for (List<? extends Object> row : rows) {
+      for (Iterable<? extends Object> row : rows) {
         for (Object o : row) {
           statement.setObject(c++, o);
         }
