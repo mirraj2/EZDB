@@ -106,11 +106,11 @@ public class Table {
   static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
-    } else if (type == Integer.class || type == Money.class) {
+    } else if (type == Integer.class) {
       return "INT";
     } else if (type == Double.class) {
       return "DOUBLE";
-    } else if (type == Long.class || type == Instant.class) {
+    } else if (type == Long.class || type == Instant.class || type == Money.class) {
       return "BIGINT";
     } else if (type == Boolean.class) {
       return "TINYINT(1)";

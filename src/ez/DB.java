@@ -638,6 +638,16 @@ public class DB {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
 
+  /**
+   * @return Number of bytes of disk usage (not including indices)
+   */
+  public long getDiskUsage(String table) {
+    // index_length gets the space that the indices take up
+    Row row = selectSingleRow(
+        "SELECT data_length FROM information_schema.tables WHERE table_schema = ? and table_name = ?");
+    return row.getLong("data_length");
+  }
+
   public void execute(String statement) {
     log(statement);
 
