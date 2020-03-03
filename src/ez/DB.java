@@ -518,7 +518,7 @@ public class DB {
   public Set<String> getTables(boolean lowercase) {
     log("getTables()");
 
-    Set<String> ret = Sets.newHashSet();
+    Set<String> ret = Sets.newLinkedHashSet();
     Connection c = getConnection();
     try {
       ResultSet rs = c.getMetaData().getTables(schema, null, "%", null);
