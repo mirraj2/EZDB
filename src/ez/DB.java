@@ -54,6 +54,13 @@ public class DB {
   public final String schema;
   public final boolean ssl;
 
+  protected DB(String schema) {
+    ip = user = pass = "";
+    this.schema = schema;
+    ssl = false;
+    source = null;
+  }
+
   public DB(String ip, String user, String pass, String schema) {
     this(ip, user, pass, schema, false);
   }
@@ -226,7 +233,7 @@ public class DB {
     stream(query, callback, true, args);
   }
 
-  private void stream(String query, Consumer<Row> callback, boolean reuseRows, Object... args) {
+  public void stream(String query, Consumer<Row> callback, boolean reuseRows, Object... args) {
     Row row = new Row();
     List<String> labels = Lists.newArrayList();
     select(query, r -> {

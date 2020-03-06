@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -133,6 +134,10 @@ public class Row implements Iterable<String> {
       add(ret, key, value);
     });
     return ret;
+  }
+
+  public Collection<Object> values() {
+    return map.values();
   }
 
   private void add(Json json, String key, Object value) {
