@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -53,6 +54,10 @@ public class Row implements Iterable<String> {
 
   public Boolean getBoolean(String key) {
     return (Boolean) map.get(key);
+  }
+
+  public UUID getUUID(String key) {
+    return UUID.fromString(get(key));
   }
 
   public <T extends Enum<T>> T getEnum(String key, Class<T> enumClass) {

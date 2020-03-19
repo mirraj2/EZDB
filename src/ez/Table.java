@@ -27,6 +27,13 @@ import ox.Reflection;
 
 public class Table {
 
+  /**
+   * 191 is the maximum number of utf8mb4 (4 byte) characters which is still under the max key length of 767 bytes see
+   * the 2nd answer here:
+   * https://stackoverflow.com/questions/1814532/1071-specified-key-was-too-long-max-key-length-is-767-bytes
+   */
+  public static final int MAX_STRING_SIZE = 191;
+
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
@@ -115,10 +122,7 @@ public class Table {
     } else if (type == Boolean.class) {
       return "TINYINT(1)";
     } else if (type == String.class) {
-      // 191 is the maximum number of utf8mb4 (4 byte) characters which is still under the max key length of 767 bytes
-      // see the 2nd answer here:
-      // https://stackoverflow.com/questions/1814532/1071-specified-key-was-too-long-max-key-length-is-767-bytes
-      return "VARCHAR(191)";
+      return "VARCHAR(" + MAX_STRING_SIZE + ")";
     } else if (type == LocalDateTime.class) {
       return "VARCHAR(63)";
     } else if (type == LocalDate.class) {
