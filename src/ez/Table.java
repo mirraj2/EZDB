@@ -110,6 +110,10 @@ public class Table {
     return this;
   }
 
+  public Collection<Index> getIndices() {
+    return indices;
+  }
+
   static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
@@ -217,7 +221,7 @@ public class Table {
     return name;
   }
 
-  static class Index {
+  public static class Index {
     public final List<String> columns;
     public final boolean unique;
 
