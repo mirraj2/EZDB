@@ -215,12 +215,16 @@ public class DB {
       for (int c = 0; c < args.length; c++) {
         statement.setObject(c + 1, convert(args[c]));
       }
-      r = statement.executeQuery();
+      try {
+        r = statement.executeQuery();
+      } catch (Exception e) {
+        System.err.println("Problem with query: " + query);
+        throw propagate(e);
+      }
       while (r.next()) {
         rowCallback.accept(r);
       }
     } catch (Exception e) {
-      System.err.println("Problem with query: " + query);
       throw propagate(e);
     } finally {
       close(r);
