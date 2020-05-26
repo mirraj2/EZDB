@@ -193,7 +193,7 @@ public class Table {
     return row;
   }
 
-  public List<Row> toRows(Collection<?> list) {
+  public List<Row> toRows(Iterable<?> list) {
     return map(list, this::toRow);
   }
 
