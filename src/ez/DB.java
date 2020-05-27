@@ -833,6 +833,10 @@ public class DB {
     }
 
     public static ColumnBuilder create(String table, String name, Class<?> type) {
+      return create(table, name, Table.getType(type));
+    }
+
+    public static ColumnBuilder create(String table, String name, String type) {
       return new ColumnBuilder(table).name(name).type(type);
     }
 
