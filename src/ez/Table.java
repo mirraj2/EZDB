@@ -34,6 +34,8 @@ public class Table {
    */
   public static final int MAX_STRING_SIZE = 191;
 
+  public static final String CASE_SENSITIVE_COLLATION = "utf8mb4_0900_ai_ci";
+
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
@@ -42,6 +44,8 @@ public class Table {
   final List<Index> indices = Lists.newArrayList();
 
   private String lastColumnAdded = "";
+
+  public boolean caseSensitive = true;
 
   public Table(String name) {
     this.name = name;
@@ -114,6 +118,11 @@ public class Table {
     return indices;
   }
 
+  public Table caseSensitive(boolean b) {
+    this.caseSensitive = b;
+    return this;
+  }
+
   static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
@@ -157,8 +166,13 @@ public class Table {
     }
     s = s.substring(0, s.length() - 2);
     s += ")\n";
-    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_bin;";
-
+    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
+    if(caseSensitive) {
+      s += "utf8mb4_bin";
+    } else {
+      s += CASE_SENSITIVE_COLLATION;
+    }
+    s += ";";
     return s;
   }
 

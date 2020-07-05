@@ -645,6 +645,15 @@ public class DB {
         "` CHANGE `" + columnName + "` `" + columnName + "` " + columnType);
   }
 
+  public void changeColumnCollation(String table, String columnName, String collation) {
+    Row row = selectSingleRow("SELECT COLUMN_TYPE"
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
+        schema, table, columnName);
+    String type = row.get("COLUMN_TYPE");
+    execute("ALTER TABLE `" + schema + "`.`" + table +
+        "` CHANGE `" + columnName + "` `" + columnName + "` " + type + " COLLATE " + collation);
+  }
+
   public void deleteColumn(String table, String column) {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
