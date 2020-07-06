@@ -93,14 +93,10 @@ public class Table {
     return this;
   }
 
-  /**
-   * @param autoConvertStrings Automatically converts empty strings to 'null' when storing into the database and
-   *                           converts 'null' into the empty string when reading from the database. Useful for String
-   *                           columns which have a unique index.
-   */
+
   public Table uniqueIndex(boolean autoConvertStrings) {
     checkState(!lastColumnAdded.isEmpty());
-    autoConvertColumns.add(lastColumnAdded);
+    autoConvertStrings();
     uniqueIndex(lastColumnAdded);
     return this;
   }
@@ -111,6 +107,16 @@ public class Table {
 
   public Table uniqueIndex(String... columns) {
     indices.add(new Index(ImmutableList.copyOf(columns), true));
+    return this;
+  }
+
+  /**
+   * Automatically converts empty strings to 'null' when storing into the database and converts 'null' into the empty
+   * string when reading from the database. Useful for String columns which have a unique index.
+   */
+  public Table autoConvertStrings() {
+    checkState(!lastColumnAdded.isEmpty());
+    autoConvertColumns.add(lastColumnAdded);
     return this;
   }
 
