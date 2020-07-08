@@ -607,6 +607,10 @@ public class DB {
     return ret;
   }
 
+  public void addIndex(String table, String column) {
+    addIndex(table, column, false);
+  }
+
   public void addIndex(String table, String column, boolean unique) {
     addIndex(table, ImmutableList.of(column), unique);
   }
