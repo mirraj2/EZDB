@@ -34,7 +34,7 @@ public class Table {
    */
   public static final int MAX_STRING_SIZE = 191;
 
-  public static final String CASE_SENSITIVE_COLLATION = "utf8mb4_0900_ai_ci";
+  public static final String CASE_INSENSITIVE_COLLATION = "utf8mb4_0900_ai_ci";
 
   public final String name;
 
@@ -176,7 +176,7 @@ public class Table {
     if(caseSensitive) {
       s += "utf8mb4_bin";
     } else {
-      s += CASE_SENSITIVE_COLLATION;
+      s += CASE_INSENSITIVE_COLLATION;
     }
     s += ";";
     return s;
