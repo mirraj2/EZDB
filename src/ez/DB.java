@@ -788,7 +788,7 @@ public class DB {
   public static class ColumnBuilder {
 
     private String table, name, type, defaultValue, after;
-    private boolean index = false, unique = false;
+    private boolean index = false, unique = false, caseSensitive = true;
 
     private ColumnBuilder(String table) {
       this.table = table;
@@ -829,9 +829,17 @@ public class DB {
       return this;
     }
 
+    public ColumnBuilder caseInsensitive() {
+      caseSensitive = false;
+      return this;
+    }
+
     public void execute(DB db) {
       StringBuilder sb = new StringBuilder("ALTER TABLE `");
       sb.append(table).append("` ADD `").append(name).append("` ").append(type);
+      if (!caseSensitive) {
+        sb.append(" COLLATE " + Table.CASE_INSENSITIVE_COLLATION);
+      }
       if (defaultValue != null) {
         sb.append(" DEFAULT '").append(defaultValue).append("'");
       }
