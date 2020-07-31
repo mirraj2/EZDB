@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 import ox.Json;
+import ox.Money;
 import ox.util.Utils;
 
 public class Row implements Iterable<String> {
@@ -62,6 +63,10 @@ public class Row implements Iterable<String> {
 
   public <T extends Enum<T>> T getEnum(String key, Class<T> enumClass) {
     return Utils.parseEnum(get(key), enumClass);
+  }
+
+  public Money getMoney(String key) {
+    return Money.fromLong(getLong(key));
   }
 
   public LocalDate getDate(String key) {
