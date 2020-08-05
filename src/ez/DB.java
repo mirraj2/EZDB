@@ -597,7 +597,7 @@ public class DB {
 
     Map<String, String> ret = Maps.newLinkedHashMap();
     for (Row row : rows) {
-      String type = row.get("type");
+      String type = new String((byte[]) row.getObject("type"));
       if (type.equals("varchar") || type.equals("char")) {
         type += "(" + row.getObject("len") + ")";
       }
