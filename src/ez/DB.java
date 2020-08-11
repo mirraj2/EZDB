@@ -204,7 +204,7 @@ public class DB {
   }
 
   private void select(String query, Consumer<ResultSet> rowCallback, Object... args) {
-    log(query, args);
+    Stopwatch watch = Stopwatch.createStarted();
 
     Connection conn = getConnection();
     PreparedStatement statement = null;
@@ -227,6 +227,7 @@ public class DB {
     } catch (Exception e) {
       throw propagate(e);
     } finally {
+      log(query, watch, args);
       close(r);
       close(statement);
       close(conn);
@@ -774,14 +775,36 @@ public class DB {
   }
 
   private void log(String query, Object... args) {
+    log(query, null, args);
+  }
+
+  private void log(String query, Stopwatch watch, Object... args) {
     if (debug) {
       if (args.length > 0) {
         query += " [" + Arrays.toString(args) + "]";
       }
-      if (query.length() > 1000) {
-        query = query.substring(0, 1000);
+      if (watch != null) {
+        query += " (" + watch + ")";
       }
-      Log.debug(query);
+      int i = 0;
+      while (i < query.length()) {
+        int j = i + 120;
+        if (j >= query.length()) {
+          Log.debug(query.substring(i, query.length()));
+          break;
+        }
+        for (; j > i; j--) {
+          char c = query.charAt(j);
+          if (c == ' ' || c == ',') {
+            break;
+          }
+        }
+        if (j == i) {
+          j = i + 120;
+        }
+        Log.debug(query.substring(i, j + 1));
+        i = j + 1;
+      }
     }
   }
 
