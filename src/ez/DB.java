@@ -745,11 +745,11 @@ public class DB {
   private final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
 
   private Object convert(Object o) {
-    if (o == null) {
-      return o;
-    }
     if (o instanceof Optional) {
       o = ((Optional<?>) o).orElse(null);
+    }
+    if (o == null) {
+      return o;
     }
     if (o instanceof UUID) {
       return o.toString();
