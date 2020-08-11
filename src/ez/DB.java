@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -764,6 +765,9 @@ public class DB {
       return ((Money) o).toLong();
     } else if (o.getClass().isArray()) {
       return o;
+    } else if (o instanceof Optional<?>) {
+      Optional<?> optional = (Optional<?>) o;
+      return optional.isPresent() ? optional.get() : null;
     } else {
       for (Class<?> c : whitelist) {
         if (c.isInstance(o)) {
