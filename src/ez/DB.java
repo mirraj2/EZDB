@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -746,6 +747,9 @@ public class DB {
   private Object convert(Object o) {
     if (o == null) {
       return o;
+    }
+    if (o instanceof Optional) {
+      o = ((Optional<?>) o).orElse(null);
     }
     if (o instanceof UUID) {
       return o.toString();
