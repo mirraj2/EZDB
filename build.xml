@@ -7,8 +7,8 @@
     <property environment="env"/>
     <property name="Ox.location" value="../ox"/>
     <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.8"/>
-    <property name="source" value="1.8"/>
+    <property name="target" value="11"/>
+    <property name="source" value="11"/>
     <path id="Ox.classpath">
         <pathelement location="${Ox.location}/bin"/>
         <pathelement location="${Ox.location}/lib/miglayout-4.0-swing.jar"/>
