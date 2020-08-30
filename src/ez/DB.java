@@ -67,6 +67,10 @@ public class DB {
   }
 
   public DB(String ip, String user, String pass, String schema, boolean ssl) {
+    this(ip, user, pass, schema, ssl, 10);
+  }
+
+  public DB(String ip, String user, String pass, String schema, boolean ssl, int maxConnections) {
     this.ip = ip;
     this.user = user;
     this.pass = pass;
@@ -87,6 +91,7 @@ public class DB {
     source.setJdbcUrl(url);
     source.setUsername(user);
     source.setPassword(pass);
+    source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
   }
