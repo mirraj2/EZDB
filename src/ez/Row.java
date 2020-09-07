@@ -79,6 +79,10 @@ public class Row implements Iterable<String> {
     return LocalDateTime.parse(s);
   }
 
+  public byte[] getBlob(String key) {
+    return (byte[]) map.get(key);
+  }
+
   @SuppressWarnings("unchecked")
   public <T> T getObject(String key) {
     return (T) map.get(key);
