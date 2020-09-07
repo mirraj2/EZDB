@@ -56,6 +56,7 @@ public class Table {
   }
 
   public Table column(String name, String type) {
+    checkState(!columns.containsKey(name), "Already added column with name: " + name);
     columns.put(name, type.toUpperCase());
     lastColumnAdded = name;
     return this;
