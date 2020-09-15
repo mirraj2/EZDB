@@ -43,6 +43,7 @@ import ez.Table.Index;
 import ox.Json;
 import ox.Log;
 import ox.Money;
+import ox.XList;
 
 public class DB {
 
@@ -188,8 +189,8 @@ public class DB {
     return only(rows);
   }
 
-  public List<Row> select(String query, Object... args) {
-    List<Row> ret = Lists.newArrayList();
+  public XList<Row> select(String query, Object... args) {
+    XList<Row> ret = XList.create();
     stream(query, row -> {
       ret.add(row);
     }, false, args);
