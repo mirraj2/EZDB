@@ -148,6 +148,13 @@ public class DB {
   }
 
   public DB transaction(Runnable r) {
+    if (isInTransaction()) {
+      // if we're already in a transaction, we can just call the callback. If an exception is thrown, the outer
+      // transaction will roll everything back.
+      r.run();
+      return this;
+    }
+
     Connection conn = getConnection();
     try {
       conn.setAutoCommit(false);
@@ -156,6 +163,7 @@ public class DB {
       conn.commit();
     } catch (Exception e) {
       try {
+        Log.error("DB: Exception occurred, rolling back transaction.");
         conn.rollback();
       } catch (Exception ee) {
         throw propagate(ee);
@@ -172,6 +180,10 @@ public class DB {
     }
 
     return this;
+  }
+
+  private boolean isInTransaction() {
+    return transactionConnections.get() != null;
   }
 
   public Row selectSingleRow(String query, Object... args) {
