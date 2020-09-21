@@ -678,6 +678,13 @@ public class DB {
         "` CHANGE `" + columnName + "` `" + columnName + "` " + type + " COLLATE " + collation);
   }
 
+  public void resetAutoIncrement(String table) {
+    Row row = selectSingleRow("SELECT id FROM `" + table + "` ORDER BY id DESC LIMIT 1");
+    long maxId = row == null ? 0 : row.getId();
+
+    execute("ALTER TABLE `" + schema + "`.`" + table + "` AUTO_INCREMENT = " + (maxId + 1));
+  }
+
   public void deleteColumn(String table, String column) {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
