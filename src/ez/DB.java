@@ -617,7 +617,15 @@ public class DB {
 
     Map<String, String> ret = Maps.newLinkedHashMap();
     for (Row row : rows) {
-      String type = new String((byte[]) row.getObject("type"));
+      Object typeObj = row.getObject("type");
+      String type;
+      if (typeObj instanceof byte[]) {
+        type = new String((byte[]) typeObj);
+      } else if (typeObj instanceof String) {
+        type = (String) typeObj;
+      } else {
+        throw new RuntimeException("Unhandled type: " + typeObj.getClass());
+      }
       if (type.equals("varchar") || type.equals("char")) {
         type += "(" + row.getObject("len") + ")";
       }
