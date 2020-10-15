@@ -210,8 +210,8 @@ public class DB {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> List<T> selectSingleColumn(String query, Object... args) {
-    List<T> ret = Lists.newArrayList();
+  public <T> XList<T> selectSingleColumn(String query, Object... args) {
+    XList<T> ret = new XList<>();
     select(query, r -> {
       try {
         ret.add((T) r.getObject(1));
