@@ -49,6 +49,11 @@ public class DB {
 
   public static final boolean debug = false;
 
+  /**
+   * Used to indicate that a value should be inserted as 'null' when calling insertRawRows()
+   */
+  public static final String NULL = "ez.DB.NULL";
+
   private final HikariDataSource source;
   private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
@@ -336,7 +341,11 @@ public class DB {
       int c = 1;
       for (Iterable<? extends Object> row : rows) {
         for (Object o : row) {
-          statement.setObject(c++, o);
+          if (o == NULL) {
+            statement.setObject(c++, null);
+          } else {
+            statement.setObject(c++, o);
+          }
         }
       }
       statement.execute();
