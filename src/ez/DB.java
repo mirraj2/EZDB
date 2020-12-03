@@ -698,6 +698,10 @@ public class DB {
     execute("ALTER TABLE `" + table + "` DROP COLUMN `" + column + "`");
   }
 
+  public void deleteColumns(String table, Iterable<String> columns) {
+    columns.forEach(column -> deleteColumn(table, column));
+  }
+
   /**
    * @return Number of bytes of disk usage (not including indices)
    */
