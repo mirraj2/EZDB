@@ -551,6 +551,12 @@ public class DB {
         schema, table);
   }
 
+  public boolean hasColumn(String table, String column) {
+    return null != selectSingleRow("SELECT `COLUMN_NAME`"
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND column_name = ? limit 1",
+        schema, table, column);
+  }
+
   public Set<String> getTables() {
     return getTables(false);
   }
