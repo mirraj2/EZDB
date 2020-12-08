@@ -584,17 +584,22 @@ public class DB {
     return ret;
   }
 
-  public void addTable(Table table) {
+  /**
+   * Returns true if the table was added, false if the table already exists.
+   */
+  public boolean addTable(Table table) {
     checkNotNull(table);
 
     if (getTables(true).contains(table.name)) {
-      throw new IllegalArgumentException("Table already exists: " + table.name);
+      return false;
     }
 
     execute(table.toSQL(schema));
     for (Index index : table.indices) {
       addIndex(table.name, index.columns, index.unique);
     }
+
+    return true;
   }
 
   public DB wipe() {
