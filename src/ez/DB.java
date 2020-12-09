@@ -43,7 +43,7 @@ import ez.Table.Index;
 import ox.Json;
 import ox.Log;
 import ox.Money;
-import ox.XList;
+import ox.x.XList;
 
 public class DB {
 
