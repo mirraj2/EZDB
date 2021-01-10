@@ -656,7 +656,10 @@ public class DB {
   }
 
   public void addIndex(String table, Collection<String> columns, boolean unique) {
-    String indexName = Joiner.on("_").join(columns);
+    addIndex(table, columns, unique, Joiner.on("_").join(columns));
+  }
+
+  protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
     List<String> cols = map(columns, s -> '`' + s + '`');
     String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
     execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
