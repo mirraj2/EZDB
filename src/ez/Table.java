@@ -140,7 +140,7 @@ public class Table {
     } else if (type == Long.class || type == Instant.class || type == Money.class) {
       return "BIGINT";
     } else if (type == Boolean.class) {
-      return "TINYINT(1)";
+      return "BOOLEAN";
     } else if (type == String.class) {
       return "VARCHAR(" + MAX_STRING_SIZE + ")";
     } else if (type == LocalDateTime.class) {

@@ -9,6 +9,7 @@ import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -55,7 +56,7 @@ public class DB {
   public static final String NULL = "ez.DB.NULL";
 
   private final HikariDataSource source;
-  private final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
+  protected final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
   public final String ip, user, pass;
   public final String schema;
@@ -280,7 +281,12 @@ public class DB {
           theRow = new Row();
         }
         for (int i = 1; i <= labels.size(); i++) {
-          theRow.with(labels.get(i - 1), r.getObject(i));
+          Object val = r.getObject(i);
+          if (val instanceof Clob) {
+            Clob clob = (Clob) val;
+            val = clob.getSubString(1, Math.toIntExact(clob.length()));
+          }
+          theRow.with(labels.get(i - 1), val);
         }
         callback.accept(theRow);
       } catch (SQLException e) {
@@ -428,8 +434,14 @@ public class DB {
 
       Iterator<Row> iter = rows.iterator();
       while (generatedKeys.next() && iter.hasNext()) {
-        long id = generatedKeys.getLong(1);
-        iter.next().with("id", id);
+        Object key = generatedKeys.getObject(1);
+        if (key instanceof Long) {
+          iter.next().with("id", key);
+        } else if (key instanceof Number) {
+          iter.next().with("id", ((Number) key).longValue());
+        } else {
+          iter.next().with("id", key);
+        }
       }
 
     } catch (Exception e) {
@@ -567,7 +579,7 @@ public class DB {
     Set<String> ret = Sets.newLinkedHashSet();
     Connection c = getConnection();
     try {
-      ResultSet rs = c.getMetaData().getTables(schema, null, "%", null);
+      ResultSet rs = c.getMetaData().getTables(schema, schema, "%", null);
 
       while (rs.next()) {
         String s = rs.getString(3);
