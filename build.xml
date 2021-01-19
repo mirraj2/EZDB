@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- WARNING: Eclipse auto-generated file.
-              Any modifications will be overwritten.
-              To include a user specific buildfile here, simply create one in the same
-              directory with the processing instruction <?eclipse.ant.import?>
-              as the first entry and export the buildfile again. --><project basedir="." default="build" name="EZDB">
+<project basedir="." default="build" name="EZDB">
     <property environment="env"/>
     <property name="Ox.location" value="../ox"/>
     <property name="debuglevel" value="source,lines,vars"/>
@@ -11,18 +7,11 @@
     <property name="source" value="8"/>
     <path id="Ox.classpath">
         <pathelement location="${Ox.location}/bin"/>
-        <pathelement location="${Ox.location}/lib/miglayout-4.0-swing.jar"/>
-        <pathelement location="${Ox.location}/lib/gson-2.8.2.jar"/>
-        <pathelement location="${Ox.location}/lib/guava-27.0.1-jre.jar"/>
-        <pathelement location="${Ox.location}/lib/objenesis-2.1.jar"/>
-        <pathelement location="${Ox.location}/lib/slf4j-api-1.7.2.jar"/>
-        <pathelement location="${Ox.location}/lib/slf4j-simple-1.7.2.jar"/>
+    	<fileset dir="${Ox.location}/lib" includes="**/*.jar" />
     </path>
     <path id="EZDB.classpath">
         <pathelement location="bin"/>
-        <pathelement location="lib/mysql-connector-java-5.1.46.jar"/>
-        <pathelement location="lib/HikariCP-2.4.7.jar"/>
-        <pathelement location="lib/javassist-3.18.2-GA.jar"/>
+    	<fileset dir="lib" includes="**/*.jar" />
         <path refid="Ox.classpath"/>
     </path>
     <target name="init">
