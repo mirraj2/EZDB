@@ -57,6 +57,10 @@ public class Row implements Iterable<String> {
     return (Boolean) map.get(key);
   }
 
+  public Json getJson(String key) {
+    return new Json((String) map.get(key));
+  }
+
   public UUID getUUID(String key) {
     return UUID.fromString(get(key));
   }
