@@ -130,7 +130,7 @@ public class Table {
     return this;
   }
 
-  static String getType(Class<?> type) {
+  public static String getType(Class<?> type) {
     if (type == UUID.class) {
       return "CHAR(36)";
     } else if (type == Integer.class) {
