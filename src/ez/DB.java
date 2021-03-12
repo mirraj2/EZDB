@@ -45,6 +45,7 @@ import ox.Json;
 import ox.Log;
 import ox.Money;
 import ox.x.XList;
+import ox.x.XOptional;
 
 public class DB {
 
@@ -811,6 +812,8 @@ public class DB {
   private Object convert(Object o) {
     if (o instanceof Optional) {
       o = ((Optional<?>) o).orElse(null);
+    } else if (o instanceof XOptional) {
+      o = ((XOptional<?>) o).orElse(null);
     }
     if (o == null) {
       return o;
