@@ -250,6 +250,11 @@ public class Table {
       this.columns = columns;
       this.unique = unique;
     }
+
+    @Override
+    public String toString() {
+      return String.format("[columns=%s, unique=%s]", columns, unique);
+    }
   }
 
 }
