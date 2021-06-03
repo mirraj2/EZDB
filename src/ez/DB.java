@@ -11,6 +11,7 @@ import static ox.util.Utils.propagate;
 
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -84,6 +85,12 @@ public class DB {
     this.pass = pass;
     this.schema = normalize(schema);
     this.ssl = ssl;
+
+    try {
+      DriverManager.registerDriver(new com.mysql.jdbc.Driver());
+    } catch (SQLException e) {
+      throw propagate(e);
+    }
 
     String url = "jdbc:mysql://" + ip + ":3306/" + schema;
     if (ssl) {
