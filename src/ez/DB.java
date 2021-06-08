@@ -45,6 +45,7 @@ import ez.Table.Index;
 import ox.Json;
 import ox.Log;
 import ox.Money;
+import ox.Percent;
 import ox.x.XList;
 import ox.x.XOptional;
 
@@ -840,6 +841,8 @@ public class DB {
       return o.toString();
     } else if (o instanceof Money) {
       return ((Money) o).toLong();
+    } else if (o instanceof Percent) {
+      return ((Percent) o).getValue();
     } else if (o.getClass().isArray()) {
       return o;
     } else {

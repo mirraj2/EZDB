@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 
 import ox.Json;
 import ox.Money;
+import ox.Percent;
 import ox.Reflection;
 
 public class Table {
@@ -135,7 +136,7 @@ public class Table {
       return "CHAR(36)";
     } else if (type == Integer.class) {
       return "INT";
-    } else if (type == Double.class) {
+    } else if (type == Double.class || type == Percent.class) {
       return "DOUBLE";
     } else if (type == Long.class || type == Instant.class || type == Money.class) {
       return "BIGINT";
