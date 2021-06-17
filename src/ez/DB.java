@@ -163,6 +163,10 @@ public class DB {
   }
 
   public DB transaction(Runnable r) {
+    return transaction(r, IsolationLevel.SERIALIZABLE);
+  }
+
+  public DB transaction(Runnable r, IsolationLevel isolationLevel) {
     if (isInTransaction()) {
       // if we're already in a transaction, we can just call the callback. If an exception is thrown, the outer
       // transaction will roll everything back.
@@ -173,6 +177,7 @@ public class DB {
     Connection conn = getConnection();
     try {
       conn.setAutoCommit(false);
+      conn.setTransactionIsolation(isolationLevel.level);
       transactionConnections.set(conn);
       r.run();
       conn.commit();
@@ -967,6 +972,20 @@ public class DB {
 
     public static ColumnBuilder table(String table) {
       return new ColumnBuilder(table);
+    }
+
+  }
+
+  public static enum IsolationLevel {
+    READ_UNCOMMITTED(1),
+    READ_COMMITTED(2),
+    REPEATABLE_READ(4),
+    SERIALIZABLE(8);
+
+    public final int level;
+
+    private IsolationLevel(int level) {
+      this.level = level;
     }
   }
 
