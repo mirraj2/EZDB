@@ -663,7 +663,8 @@ public class DB {
 
     Map<String, String> ret = Maps.newLinkedHashMap();
     for (Row row : rows) {
-      String type = new String((byte[]) row.getObject("type"));
+      Object o = row.getObject("type");
+      String type = o instanceof String ? (String) o : new String((byte[]) o);
       if (type.equals("varchar") || type.equals("char")) {
         type += "(" + row.getObject("len") + ")";
       }
