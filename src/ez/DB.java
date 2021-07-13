@@ -848,7 +848,7 @@ public class DB {
     } else if (o instanceof Money) {
       return ((Money) o).toLong();
     } else if (o instanceof Percent) {
-      return ((Percent) o).getValue();
+      return ((Percent) o).formatWithDecimals();
     } else if (o.getClass().isArray()) {
       return o;
     } else {

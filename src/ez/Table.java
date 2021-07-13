@@ -136,7 +136,7 @@ public class Table {
       return "CHAR(36)";
     } else if (type == Integer.class) {
       return "INT";
-    } else if (type == Double.class || type == Percent.class) {
+    } else if (type == Double.class) {
       return "DOUBLE";
     } else if (type == Long.class || type == Instant.class || type == Money.class) {
       return "BIGINT";
@@ -150,6 +150,8 @@ public class Table {
       return "DATE";
     } else if (type == LocalTime.class) {
       return "CHAR(5)";
+    } else if (type == Percent.class) {
+      return "VARCHAR(20)";
     }
     throw new RuntimeException("Unsupported type: " + type);
   }
