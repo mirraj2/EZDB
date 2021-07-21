@@ -72,7 +72,7 @@ public class Table {
    */
   public Table idColumn() {
     primaryIndices.add(columns.size());
-    column("id", "INTEGER UNSIGNED NOT NULL AUTO_INCREMENT");
+    column("id", "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT");
     return this;
   }
 
