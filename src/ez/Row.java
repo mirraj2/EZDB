@@ -34,7 +34,8 @@ public class Row implements Iterable<String> {
   }
 
   public Long getId() {
-    return getLong("id");
+    Object val = map.get("id");
+    return (val instanceof Long) ? (Long) val : ((Integer) val).longValue();
   }
 
   public String get(String key) {
@@ -46,12 +47,7 @@ public class Row implements Iterable<String> {
   }
 
   public Long getLong(String key) {
-    Object val = map.get(key);
-    if (val instanceof Long) {
-      return (Long) val;
-    } else {      
-      return ((Integer) val).longValue();
-    }
+    return (Long) map.get(key);
   }
 
   public Double getDouble(String key) {
