@@ -47,10 +47,10 @@ public class Row implements Iterable<String> {
 
   public Long getLong(String key) {
     Object val = map.get(key);
-    if (val instanceof Integer) {
-      return ((Integer) val).longValue();
+    if (val instanceof Long) {
+      return (Long) val;
     } else {      
-      return (Long) map.get(key);
+      return ((Integer) val).longValue();
     }
   }
 
