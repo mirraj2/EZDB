@@ -42,6 +42,7 @@ public class Table {
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
+  private final Map<String, Class<?>> columnClasses = Maps.newLinkedHashMap();
   private final List<Integer> primaryIndices = Lists.newArrayList();
   private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
@@ -55,6 +56,7 @@ public class Table {
   }
 
   public Table column(String name, Class<?> type) {
+    columnClasses.put(name, type);
     return column(name, getType(type));
   }
 
@@ -173,6 +175,10 @@ public class Table {
 
   public Map<String, String> getColumns() {
     return columns;
+  }
+
+  public Map<String, Class<?>> getColumnClasses() {
+    return columnClasses;
   }
 
   public boolean hasColumn(String column) {

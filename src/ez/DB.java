@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
+import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
 import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
@@ -715,6 +716,10 @@ public class DB {
   }
 
   public void changeColumnType(String table, String columnName, String columnType) {
+    checkNotEmpty(table);
+    checkNotEmpty(columnName);
+    checkNotEmpty(columnType);
+
     execute("ALTER TABLE `" + schema + "`.`" + table +
         "` CHANGE `" + columnName + "` `" + columnName + "` " + columnType);
   }
