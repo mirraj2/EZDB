@@ -37,6 +37,8 @@ public class Table {
 
   public static final String CASE_INSENSITIVE_COLLATION = "utf8mb4_0900_ai_ci";
 
+  private static final Map<Class<?>, String> columnTypesMap = Maps.newConcurrentMap();
+
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
@@ -132,28 +134,11 @@ public class Table {
   }
 
   public static String getType(Class<?> type) {
-    if (type == UUID.class) {
-      return "CHAR(36)";
-    } else if (type == Integer.class) {
-      return "INT";
-    } else if (type == Double.class) {
-      return "DOUBLE";
-    } else if (type == Long.class || type == Instant.class || type == Money.class) {
-      return "BIGINT";
-    } else if (type == Boolean.class) {
-      return "BOOLEAN";
-    } else if (type == String.class) {
-      return "VARCHAR(" + MAX_STRING_SIZE + ")";
-    } else if (type == LocalDateTime.class) {
-      return "VARCHAR(63)";
-    } else if (type == LocalDate.class) {
-      return "DATE";
-    } else if (type == LocalTime.class) {
-      return "CHAR(5)";
-    } else if (type == Percent.class) {
-      return "VARCHAR(20)";
+    String ret = columnTypesMap.get(type);
+    if (ret == null) {
+      throw new RuntimeException("Unsupported type: " + type);
     }
-    throw new RuntimeException("Unsupported type: " + type);
+    return ret;
   }
 
   public String toSQL(String schema) {
@@ -258,6 +243,25 @@ public class Table {
     public String toString() {
       return String.format("[columns=%s, unique=%s]", columns, unique);
     }
+  }
+
+  static {
+    columnTypesMap.put(UUID.class, "CHAR(36)");
+    columnTypesMap.put(Integer.class, "INT");
+    columnTypesMap.put(Double.class, "DOUBLE");
+    columnTypesMap.put(Long.class, "BIGINT");
+    columnTypesMap.put(Instant.class, "BIGINT");
+    columnTypesMap.put(Money.class, "BIGINT");
+    columnTypesMap.put(Boolean.class, "BOOLEAN");
+    columnTypesMap.put(String.class, "VARCHAR(" + MAX_STRING_SIZE + ")");
+    columnTypesMap.put(LocalDateTime.class, "CHAR(63)");
+    columnTypesMap.put(LocalDate.class, "DATE");
+    columnTypesMap.put(LocalTime.class, "CHAR(5)");
+    columnTypesMap.put(Percent.class, "VARCHAR(20)");
+  }
+
+  public static void registerColumn(Class<?> columnType, String sqlType) {
+    columnTypesMap.put(columnType, sqlType);
   }
 
 }
