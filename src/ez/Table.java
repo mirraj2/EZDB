@@ -25,6 +25,7 @@ import ox.Json;
 import ox.Money;
 import ox.Percent;
 import ox.Reflection;
+import ox.x.XList;
 
 public class Table {
 
@@ -208,11 +209,11 @@ public class Table {
     return row;
   }
 
-  public List<Row> toRows(Iterable<?> list) {
+  public XList<Row> toRows(Iterable<?> list) {
     return map(list, this::toRow);
   }
 
-  public <T> List<T> fromRows(Collection<Row> rows, Class<T> c) {
+  public <T> XList<T> fromRows(Collection<Row> rows, Class<T> c) {
     return map(rows, row -> fromRow(row, c));
   }
 
