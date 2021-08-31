@@ -905,6 +905,11 @@ public class DB {
     private String table, name, type, defaultValue, after;
     private boolean index = false, unique = false, caseSensitive = true;
 
+    /**
+     * Whether the column should be inserted as index 0.
+     */
+    private boolean first = false;
+
     private ColumnBuilder(String table) {
       this.table = table;
     }
@@ -933,6 +938,11 @@ public class DB {
       return this;
     }
 
+    public ColumnBuilder first() {
+      this.first = true;
+      return this;
+    }
+
     public ColumnBuilder index() {
       index = true;
       return this;
@@ -958,9 +968,13 @@ public class DB {
       if (defaultValue != null) {
         sb.append(" DEFAULT '").append(defaultValue).append("'");
       }
-      if (after != null) {
+
+      if (first) {
+        sb.append(" FIRST");
+      } else if (after != null) {
         sb.append(" AFTER `").append(after).append('`');
       }
+
       db.execute(sb.toString());
 
       if (index) {
