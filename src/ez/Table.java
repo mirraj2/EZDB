@@ -44,11 +44,12 @@ public class Table {
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
   private final Map<String, Class<?>> columnClasses = Maps.newLinkedHashMap();
+
   private final List<Integer> primaryIndices = Lists.newArrayList();
   private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
 
-  private String lastColumnAdded = "";
+  protected String lastColumnAdded = "";
 
   public boolean caseSensitive = true;
 
