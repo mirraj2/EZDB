@@ -83,6 +83,7 @@ public class Table {
   }
 
   public Table primary(String name, Class<?> type) {
+    columnClasses.put(name, type);
     return primary(name, getType(type));
   }
 

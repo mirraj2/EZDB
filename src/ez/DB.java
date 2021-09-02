@@ -66,11 +66,14 @@ public class DB {
   public final String schema;
   public final boolean ssl;
 
+  private final int maxConnections;
+
   protected DB(String schema) {
     ip = user = pass = "";
     this.schema = schema;
     ssl = false;
     source = null;
+    this.maxConnections = 10;
   }
 
   public DB(String ip, String user, String pass, String schema) {
@@ -87,6 +90,7 @@ public class DB {
     this.pass = pass;
     this.schema = normalize(schema);
     this.ssl = ssl;
+    this.maxConnections = maxConnections;
 
     try {
       DriverManager.registerDriver(new com.mysql.jdbc.Driver());
@@ -141,7 +145,7 @@ public class DB {
         createSchema(schema);
       }
     }
-    return new DB(ip, user, pass, schema, ssl);
+    return new DB(ip, user, pass, schema, ssl, maxConnections);
   }
 
   /**
