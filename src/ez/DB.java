@@ -907,7 +907,7 @@ public class DB {
   public static class ColumnBuilder {
 
     private String table, name, type, defaultValue, after;
-    private boolean index = false, unique = false, caseSensitive = true;
+    private boolean index = false, unique = false, caseSensitive = true, notNull = false;
 
     /**
      * Whether the column should be inserted as index 0.
@@ -963,6 +963,11 @@ public class DB {
       return this;
     }
 
+    public ColumnBuilder notNull() {
+      notNull = true;
+      return this;
+    }
+
     public void execute(DB db) {
       StringBuilder sb = new StringBuilder("ALTER TABLE `");
       sb.append(table).append("` ADD `").append(name).append("` ").append(type);
@@ -971,6 +976,9 @@ public class DB {
       }
       if (defaultValue != null) {
         sb.append(" DEFAULT '").append(defaultValue).append("'");
+      }
+      if (notNull) {
+        sb.append(" NOT NULL");
       }
 
       if (first) {
