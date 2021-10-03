@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -188,8 +189,12 @@ public class DB {
       conn.commit();
     } catch (Exception e) {
       try {
-        Log.error("DB: Exception occurred, rolling back transaction.");
-        conn.rollback();
+        if (shouldRollback(e)) {
+          Log.error("DB: Exception occurred, rolling back transaction.");
+          conn.rollback();
+        } else {
+          Log.error("DB: Exception occurred, but NOT rolling back transaction");
+        }
       } catch (Exception ee) {
         throw propagate(ee);
       }
@@ -205,6 +210,15 @@ public class DB {
     }
 
     return this;
+  }
+
+  private boolean shouldRollback(Exception e) {
+    Throwable cause = Throwables.getRootCause(e);
+    if (cause instanceof RollbackException) {
+      return ((RollbackException) cause).shouldRollback();
+    } else {
+      return true;
+    }
   }
 
   private boolean isInTransaction() {
@@ -1019,6 +1033,17 @@ public class DB {
     private IsolationLevel(int level) {
       this.level = level;
     }
+  }
+
+  public static interface RollbackException {
+
+    /**
+     * Gets whether this Exception should trigger a rollback.
+     */
+    public default boolean shouldRollback() {
+      return true;
+    }
+
   }
 
 }
