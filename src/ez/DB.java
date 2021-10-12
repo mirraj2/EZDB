@@ -612,7 +612,7 @@ public class DB {
     Set<String> ret = Sets.newLinkedHashSet();
     Connection c = getConnection();
     try {
-      ResultSet rs = c.getMetaData().getTables(schema, schema, "%", null);
+      ResultSet rs = c.getMetaData().getTables(schema, schema, "%", new String[] { "TABLE" });
 
       while (rs.next()) {
         String s = rs.getString(3);
@@ -850,7 +850,7 @@ public class DB {
     if (o instanceof Optional) {
       o = ((Optional<?>) o).orElse(null);
     } else if (o instanceof XOptional) {
-      o = ((XOptional<?>) o).orElse(null);
+      o = ((XOptional<?>) o).orElseNull();
     }
     if (o == null) {
       return o;
