@@ -711,6 +711,16 @@ public class DB {
     execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
   }
 
+  /**
+   * Whether the table has an index of the given name. Only recommended use is single-column indices, in which case the
+   * index name will be the column name.
+   */
+  public boolean hasIndex(String tableName, String indexName) {
+    return select("SHOW INDEX FROM `" + tableName + "`")
+        .toSet(r -> r.get("Key_name"))
+        .contains(indexName);
+  }
+
   public void removeIndex(String table, String indexName) {
     execute("ALTER TABLE `" + table + "` DROP INDEX `" + indexName + "`");
   }
