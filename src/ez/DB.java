@@ -21,6 +21,7 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -882,6 +883,8 @@ public class DB {
       return ((Money) o).toLong();
     } else if (o instanceof Percent) {
       return ((Percent) o).formatWithDecimals();
+    } else if (o instanceof ZoneId) {
+      return o.toString();
     } else if (o.getClass().isArray()) {
       return o;
     } else {

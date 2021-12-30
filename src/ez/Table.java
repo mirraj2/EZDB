@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -267,6 +268,7 @@ public class Table {
     columnTypesMap.put(LocalDate.class, "DATE");
     columnTypesMap.put(LocalTime.class, "CHAR(5)");
     columnTypesMap.put(Percent.class, "VARCHAR(20)");
+    columnTypesMap.put(ZoneId.class, "VARCHAR(64)");
   }
 
   public static void registerColumn(Class<?> columnType, String sqlType) {
