@@ -51,6 +51,7 @@ import ox.Money;
 import ox.Percent;
 import ox.x.XList;
 import ox.x.XOptional;
+import ox.x.XSet;
 
 public class DB {
 
@@ -64,30 +65,30 @@ public class DB {
   private final HikariDataSource source;
   protected final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
 
-  public final String ip, user, pass;
+  public final String host, user, pass;
   public final String schema;
   public final boolean ssl;
 
   private final int maxConnections;
 
   protected DB(String schema) {
-    ip = user = pass = "";
+    host = user = pass = "";
     this.schema = schema;
     ssl = false;
     source = null;
     this.maxConnections = 10;
   }
 
-  public DB(String ip, String user, String pass, String schema) {
-    this(ip, user, pass, schema, false);
+  public DB(String host, String user, String pass, String schema) {
+    this(host, user, pass, schema, false);
   }
 
-  public DB(String ip, String user, String pass, String schema, boolean ssl) {
-    this(ip, user, pass, schema, ssl, 10);
+  public DB(String host, String user, String pass, String schema, boolean ssl) {
+    this(host, user, pass, schema, ssl, 10);
   }
 
-  public DB(String ip, String user, String pass, String schema, boolean ssl, int maxConnections) {
-    this.ip = ip;
+  public DB(String host, String user, String pass, String schema, boolean ssl, int maxConnections) {
+    this.host = host;
     this.user = user;
     this.pass = pass;
     this.schema = normalize(schema);
@@ -100,7 +101,7 @@ public class DB {
       throw propagate(e);
     }
 
-    String url = "jdbc:mysql://" + ip + ":3306/" + schema;
+    String url = "jdbc:mysql://" + host + ":3306/" + schema;
     if (ssl) {
       url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
     } else {
@@ -132,7 +133,7 @@ public class DB {
         throw propagate(e);
       }
       Log.info("Creating schema: " + schema);
-      DB temp = new DB(ip, user, pass, "", ssl);
+      DB temp = new DB(host, user, pass, "", ssl);
       temp.createSchema(schema);
       temp.shutdown();
     }
@@ -147,7 +148,7 @@ public class DB {
         createSchema(schema);
       }
     }
-    return new DB(ip, user, pass, schema, ssl, maxConnections);
+    return new DB(host, user, pass, schema, ssl, maxConnections);
   }
 
   /**
@@ -603,14 +604,14 @@ public class DB {
         schema, table, column);
   }
 
-  public Set<String> getTables() {
+  public XSet<String> getTables() {
     return getTables(false);
   }
 
-  public Set<String> getTables(boolean lowercase) {
+  public XSet<String> getTables(boolean lowercase) {
     log("getTables()");
 
-    Set<String> ret = Sets.newLinkedHashSet();
+    XSet<String> ret = XSet.create();
     Connection c = getConnection();
     try {
       ResultSet rs = c.getMetaData().getTables(schema, schema, "%", new String[] { "TABLE" });
@@ -649,9 +650,7 @@ public class DB {
   }
 
   public DB wipe() {
-    for (String table : getTables()) {
-      deleteTable(table);
-    }
+    deleteTables(getTables().toList());
     return this;
   }
 
@@ -728,6 +727,10 @@ public class DB {
 
   public void deleteTable(String table) {
     execute("DROP TABLE `" + schema + "`.`" + table + "`");
+  }
+
+  public void deleteTables(XList<String> tables) {
+    execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + schema + "`.`" + table + "`")));
   }
 
   public void renameTable(String oldName, String newName) {
