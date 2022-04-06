@@ -885,7 +885,7 @@ public class DB {
     } else if (o instanceof Money) {
       return ((Money) o).toLong();
     } else if (o instanceof Percent) {
-      return ((Percent) o).formatWithDecimals();
+      return ((Percent) o).formatWithMaxLength(20);
     } else if (o instanceof ZoneId) {
       return o.toString();
     } else if (o.getClass().isArray()) {
