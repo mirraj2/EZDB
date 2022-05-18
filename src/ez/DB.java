@@ -45,6 +45,7 @@ import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
 
 import ez.Table.Index;
+
 import ox.Json;
 import ox.Log;
 import ox.Money;
@@ -858,9 +859,9 @@ public class DB {
     source.close();
   }
 
-  private final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
+  private static final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
 
-  private Object convert(Object o) {
+  public static Object convert(Object o) {
     if (o instanceof Optional) {
       o = ((Optional<?>) o).orElse(null);
     } else if (o instanceof XOptional) {
