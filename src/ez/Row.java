@@ -14,6 +14,7 @@ import com.google.common.collect.Maps;
 
 import ox.Json;
 import ox.Money;
+import ox.Percent;
 import ox.util.Utils;
 
 public class Row implements Iterable<String> {
@@ -71,7 +72,12 @@ public class Row implements Iterable<String> {
   }
 
   public Money getMoney(String key) {
-    return Money.fromLong(getLong(key));
+    Long val = getLong(key);
+    return val == null ? null : Money.fromLong(val);
+  }
+
+  public Percent getPercent(String key) {
+    return Percent.parse(get(key));
   }
 
   public LocalDate getDate(String key) {

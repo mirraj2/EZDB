@@ -331,11 +331,11 @@ public class DB {
     }, args);
   }
 
-  public void streamBulk(String query, Consumer<List<Row>> callback, int chunkSize, Object... args) {
+  public void streamBulk(String query, Consumer<XList<Row>> callback, int chunkSize, Object... args) {
     int offset = 0;
 
     while (true) {
-      List<Row> rows = select(query + " LIMIT " + offset + ", " + chunkSize, args);
+      XList<Row> rows = select(query + " LIMIT " + offset + ", " + chunkSize, args);
       callback.accept(rows);
       offset += chunkSize;
       if (rows.size() < chunkSize) {
