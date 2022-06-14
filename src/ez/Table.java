@@ -235,6 +235,10 @@ public class Table {
     return ret;
   }
 
+  public Set<String> getAutoConvertColumns() {
+    return autoConvertColumns;
+  }
+
   @Override
   public String toString() {
     return name;
