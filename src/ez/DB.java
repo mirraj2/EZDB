@@ -56,7 +56,7 @@ import ox.x.XSet;
 
 public class DB {
 
-  public static final boolean debug = false;
+  public static boolean debug = false;
 
   /**
    * Used to indicate that a value should be inserted as 'null' when calling insertRawRows()
@@ -913,25 +913,7 @@ public class DB {
       if (watch != null) {
         query += " (" + watch + ")";
       }
-      int i = 0;
-      while (i < query.length()) {
-        int j = i + 120;
-        if (j >= query.length()) {
-          Log.debug(query.substring(i, query.length()));
-          break;
-        }
-        for (; j > i; j--) {
-          char c = query.charAt(j);
-          if (c == ' ' || c == ',') {
-            break;
-          }
-        }
-        if (j == i) {
-          j = i + 120;
-        }
-        Log.debug(query.substring(i, j + 1));
-        i = j + 1;
-      }
+      Log.debug(query);
     }
   }
 
