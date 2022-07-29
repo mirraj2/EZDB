@@ -10,6 +10,8 @@ import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -43,6 +45,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.pool.HikariPool;
 
 import ez.Table.Index;
 
@@ -50,6 +53,7 @@ import ox.Json;
 import ox.Log;
 import ox.Money;
 import ox.Percent;
+import ox.Reflection;
 import ox.x.XList;
 import ox.x.XOptional;
 import ox.x.XSet;
@@ -846,9 +850,17 @@ public class DB {
       return ret;
     }
     try {
+      // if (debug) {
+      // printPoolStats("Before getConnection()");
+      // Thread.dumpStack();
+      // }
       return source.getConnection();
     } catch (Exception e) {
       throw propagate(e);
+    } finally {
+      // if (debug) {
+      // printPoolStats("After getConnection()");
+      // }
     }
   }
 
@@ -914,6 +926,19 @@ public class DB {
         query += " (" + watch + ")";
       }
       Log.debug(query);
+    }
+  }
+
+  /**
+   * For debugging
+   */
+  public void printPoolStats(String prefix) {
+    HikariPool pool = Reflection.get(source, "pool");
+    Method method = Reflection.getMethod(pool.getClass(), "logPoolState");
+    try {
+      method.invoke(pool, new Object[] { new String[] { prefix } });
+    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      e.printStackTrace();
     }
   }
 
