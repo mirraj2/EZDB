@@ -636,6 +636,12 @@ public class DB {
     return ret;
   }
 
+  public XSet<String> getTablesWithColumn(String columnName) {
+    XList<String> ret = selectSingleColumn("SELECT DISTINCT TABLE_NAME FROM information_schema.columns"
+        + " WHERE COLUMN_NAME = ? AND TABLE_SCHEMA = ?", columnName, schema);
+    return ret.toSet();
+  }
+
   /**
    * Returns true if the table was added, false if the table already exists.
    */
