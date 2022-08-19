@@ -599,13 +599,13 @@ public class DB {
 
   public boolean hasTable(String table) {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
-        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? limit 1",
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
         schema, table);
   }
 
   public boolean hasColumn(String table, String column) {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
-        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND column_name = ? limit 1",
+        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
         schema, table, column);
   }
 
