@@ -950,20 +950,20 @@ public class DB {
 
   public static class ColumnBuilder {
 
-    private String table, name, type, defaultValue, after;
-    private boolean index = false, unique = false, caseSensitive = true, notNull = false;
+    protected String table, columnName, type, defaultValue, after;
+    protected boolean index = false, unique = false, caseSensitive = true, notNull = false;
 
     /**
      * Whether the column should be inserted as index 0.
      */
-    private boolean first = false;
+    protected boolean first = false;
 
-    private ColumnBuilder(String table) {
+    protected ColumnBuilder(String table) {
       this.table = table;
     }
 
     public ColumnBuilder name(String name) {
-      this.name = name;
+      this.columnName = name;
       return this;
     }
 
@@ -1013,8 +1013,13 @@ public class DB {
     }
 
     public void execute(DB db) {
+      if (db.hasColumn(table, columnName)) {
+        Log.warn(table + "." + columnName + " already exists.");
+        return;
+      }
+
       StringBuilder sb = new StringBuilder("ALTER TABLE `");
-      sb.append(table).append("` ADD `").append(name).append("` ").append(type);
+      sb.append(table).append("` ADD `").append(columnName).append("` ").append(type);
       if (!caseSensitive) {
         sb.append(" COLLATE " + Table.CASE_INSENSITIVE_COLLATION);
       }
@@ -1034,7 +1039,7 @@ public class DB {
       db.execute(sb.toString());
 
       if (index) {
-        db.addIndex(table, name, unique);
+        db.addIndex(table, columnName, unique);
       }
     }
 
