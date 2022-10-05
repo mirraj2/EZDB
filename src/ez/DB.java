@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
+import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
 import static ox.util.Utils.normalize;
@@ -48,6 +49,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
 
 import ez.Table.Index;
+import ez.helper.DebuggingData;
 
 import ox.Json;
 import ox.Log;
@@ -61,6 +63,7 @@ import ox.x.XSet;
 public class DB {
 
   public static boolean debug = false;
+  public static int maxDebugLength = 1000;
 
   /**
    * Used to indicate that a value should be inserted as 'null' when calling insertRawRows()
@@ -68,7 +71,11 @@ public class DB {
   public static final String NULL = "ez.DB.NULL";
 
   private final HikariDataSource source;
+
+  // TODO try making this an InheritableThreadLocal
   protected final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
+
+  private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
 
   public final String host, user, pass;
   public final String schema;
@@ -856,17 +863,9 @@ public class DB {
       return ret;
     }
     try {
-      // if (debug) {
-      // printPoolStats("Before getConnection()");
-      // Thread.dumpStack();
-      // }
       return source.getConnection();
     } catch (Exception e) {
       throw propagate(e);
-    } finally {
-      // if (debug) {
-      // printPoolStats("After getConnection()");
-      // }
     }
   }
 
@@ -924,6 +923,11 @@ public class DB {
   }
 
   private void log(String query, Stopwatch watch, Object... args) {
+    DebuggingData data = threadDebuggingData.get();
+    if (data != null) {
+      data.store(query, XList.of(args), watch == null ? null : watch.elapsed());
+    }
+
     if (debug) {
       if (args.length > 0) {
         query += " [" + Arrays.toString(args) + "]";
@@ -931,6 +935,7 @@ public class DB {
       if (watch != null) {
         query += " (" + watch + ")";
       }
+      query = abbreviate(query, maxDebugLength);
       Log.debug(query);
     }
   }
@@ -948,113 +953,18 @@ public class DB {
     }
   }
 
-  public static class ColumnBuilder {
-
-    protected String table, columnName, type, defaultValue, after;
-    protected boolean index = false, unique = false, caseSensitive = true, notNull = false;
-
-    /**
-     * Whether the column should be inserted as index 0.
-     */
-    protected boolean first = false;
-
-    protected ColumnBuilder(String table) {
-      this.table = table;
+  /**
+   * Tracks all database requests performed during the callback and then reports debugging information about them.
+   */
+  public void captureDebuggingData(Runnable callback) {
+    DebuggingData data = new DebuggingData();
+    threadDebuggingData.set(data);
+    try {
+      callback.run();
+      data.print();
+    } finally {
+      threadDebuggingData.set(null);
     }
-
-    public ColumnBuilder name(String name) {
-      this.columnName = name;
-      return this;
-    }
-
-    public ColumnBuilder type(Class<?> type) {
-      return type(Table.getType(type));
-    }
-
-    public ColumnBuilder type(String type) {
-      this.type = type;
-      return this;
-    }
-
-    public ColumnBuilder defaultValue(String defaultValue) {
-      this.defaultValue = defaultValue;
-      return this;
-    }
-
-    public ColumnBuilder after(String columnName) {
-      this.after = columnName;
-      return this;
-    }
-
-    public ColumnBuilder first() {
-      this.first = true;
-      return this;
-    }
-
-    public ColumnBuilder index() {
-      index = true;
-      return this;
-    }
-
-    public ColumnBuilder uniqueIndex() {
-      index = true;
-      unique = true;
-      return this;
-    }
-
-    public ColumnBuilder caseInsensitive() {
-      caseSensitive = false;
-      return this;
-    }
-
-    public ColumnBuilder notNull() {
-      notNull = true;
-      return this;
-    }
-
-    public void execute(DB db) {
-      if (db.hasColumn(table, columnName)) {
-        Log.warn(table + "." + columnName + " already exists.");
-        return;
-      }
-
-      StringBuilder sb = new StringBuilder("ALTER TABLE `");
-      sb.append(table).append("` ADD `").append(columnName).append("` ").append(type);
-      if (!caseSensitive) {
-        sb.append(" COLLATE " + Table.CASE_INSENSITIVE_COLLATION);
-      }
-      if (defaultValue != null) {
-        sb.append(" DEFAULT '").append(defaultValue).append("'");
-      }
-      if (notNull) {
-        sb.append(" NOT NULL");
-      }
-
-      if (first) {
-        sb.append(" FIRST");
-      } else if (after != null) {
-        sb.append(" AFTER `").append(after).append('`');
-      }
-
-      db.execute(sb.toString());
-
-      if (index) {
-        db.addIndex(table, columnName, unique);
-      }
-    }
-
-    public static ColumnBuilder create(String table, String name, Class<?> type) {
-      return create(table, name, Table.getType(type));
-    }
-
-    public static ColumnBuilder create(String table, String name, String type) {
-      return new ColumnBuilder(table).name(name).type(type);
-    }
-
-    public static ColumnBuilder table(String table) {
-      return new ColumnBuilder(table);
-    }
-
   }
 
   public static enum IsolationLevel {
