@@ -72,9 +72,7 @@ public class DB {
 
   private final HikariDataSource source;
 
-  // TODO try making this an InheritableThreadLocal
-  protected final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
-
+  protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
 
   public final String host, user, pass;
