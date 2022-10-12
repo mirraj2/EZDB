@@ -74,6 +74,7 @@ public class DB {
 
   protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
+  private final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
   public final String host, user, pass;
   public final String schema;
@@ -178,6 +179,16 @@ public class DB {
    */
   public static boolean isValidName(String name) {
     return Pattern.matches("^[a-z][a-z0-9_.]*$", name);
+  }
+
+  public DB disableForeignKeyChecks(Runnable r) {
+    disableForeignKeyChecks.set(true);
+    try {
+      r.run();
+    } finally {
+      disableForeignKeyChecks.set(false);
+    }
+    return this;
   }
 
   public DB transaction(Runnable r) {
@@ -828,6 +839,15 @@ public class DB {
       return;
     }
     try {
+      if (normalize(disableForeignKeyChecks.get())) {
+        try {
+          Statement s = c.createStatement();
+          s.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
+          close(s);
+        } catch (Exception e) {
+          throw propagate(e);
+        }
+      }
       c.close();
     } catch (Exception e) {
       e.printStackTrace();
@@ -857,14 +877,23 @@ public class DB {
 
   public Connection getConnection() {
     Connection ret = transactionConnections.get();
-    if (ret != null) {
-      return ret;
+    if (ret == null) {
+      try {
+        ret = source.getConnection();
+      } catch (Exception e) {
+        throw propagate(e);
+      }
     }
-    try {
-      return source.getConnection();
-    } catch (Exception e) {
-      throw propagate(e);
+    if (normalize(disableForeignKeyChecks.get())) {
+      try {
+        Statement s = ret.createStatement();
+        s.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+        close(s);
+      } catch (Exception e) {
+        throw propagate(e);
+      }
     }
+    return ret;
   }
 
   /**
