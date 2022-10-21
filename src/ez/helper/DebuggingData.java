@@ -1,5 +1,6 @@
 package ez.helper;
 
+import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.f;
 import static ox.util.Utils.normalize;
 
@@ -39,13 +40,16 @@ public class DebuggingData {
           XList<Query> queries = groupedQueries.get(sqlQuery);
           int numDuplicates = countDuplicates(queries);
           if (numDuplicates > 1) {
-            sb.append(f("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates, sqlQuery));
+            sb.append(f("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates, abbreviate(sqlQuery, 100)));
           } else {
-            sb.append(f("{0}x of: {1}\n", queries.size(), sqlQuery));
+            sb.append(f("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, 100)));
           }
         });
 
     sb.append("#################################\n\n");
+    if (queries.size() > 1000) {
+      sb.append("Summary: " + queries.size() + " queries.\n\n");
+    }
     Log.debug(sb);
   }
 
