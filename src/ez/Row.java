@@ -2,6 +2,7 @@ package ez;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -88,6 +89,11 @@ public class Row implements Iterable<String> {
   public LocalDateTime getDateTime(String key) {
     String s = (String) map.get(key);
     return LocalDateTime.parse(s);
+  }
+
+  public Instant getInstant(String key) {
+    String s = (String) map.get(key);
+    return Instant.parse(key);
   }
 
   public byte[] getBlob(String key) {
