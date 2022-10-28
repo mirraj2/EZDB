@@ -415,8 +415,15 @@ public abstract class DB {
   public abstract boolean hasColumn(String table, String column);
 
   public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    return null != selectSingleRow(
-        "SELECT * FROM INFORMATION_SCEHMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND CONSTRAINT_NAME = '\" + constraintName + \"';\"");
+    return null != selectSingleRow("SELECT `COLUMN_NAME`"
+        + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+        sourceTable, sourceColumn, foreignTable, foreignColumn);
+  }
+
+  public String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    return selectSingleRow("SELECT `CONSTRAINT_NAME`"
+        + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+        sourceTable, sourceColumn, foreignTable, foreignColumn).get("CONSTRAINT_NAME");
   }
 
   public XSet<String> getTables() {
@@ -597,6 +604,15 @@ public abstract class DB {
 
   public void deleteColumns(String table, Iterable<String> columns) {
     columns.forEach(column -> deleteColumn(table, column));
+  }
+
+  public void removeForeignKey(String table, String foreignKeyName) {
+    execute("ALTER TABLE `" + table + "` DROP FOREIGN KEY " + foreignKeyName);
+  }
+
+  public void removeForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    execute("ALTER TABLE `" + sourceTable + "` DROP FOREIGN KEY "
+        + getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn));
   }
 
   /**
