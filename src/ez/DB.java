@@ -414,6 +414,11 @@ public abstract class DB {
 
   public abstract boolean hasColumn(String table, String column);
 
+  public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    return null != selectSingleRow(
+        "SELECT * FROM INFORMATION_SCEHMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND CONSTRAINT_NAME = '\" + constraintName + \"';\"");
+  }
+
   public XSet<String> getTables() {
     return getTables(false);
   }
