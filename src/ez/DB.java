@@ -140,6 +140,12 @@ public class DB {
       throw propagate(e);
     }
 
+    try {
+      DriverManager.registerDriver(new org.postgresql.Driver());
+    } catch (SQLException e) {
+      throw propagate(e);
+    }
+
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
