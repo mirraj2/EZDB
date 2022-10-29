@@ -12,6 +12,8 @@ import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import ez.DB.DatabaseType;
+
 import ox.Json;
 import ox.Money;
 import ox.Percent;
@@ -99,22 +101,22 @@ public class Row implements Iterable<String> {
     return (T) map.get(key);
   }
 
-  String getInsertStatement(String schema, String table) {
-    String s = getInsertStatementFirstPart(schema, table, false);
-    s += " VALUES (";
-    for (int i = 0; i < map.size(); i++) {
-      s += "?,";
-    }
-    s = s.substring(0, s.length() - 1);
-    s += ")";
-    return s;
-  }
+  // String getInsertStatement(DatabaseType databaseType, String schema, String table) {
+  // String s = getInsertStatementFirstPart(databaseType, schema, table, false);
+  // s += " VALUES (";
+  // for (int i = 0; i < map.size(); i++) {
+  // s += "?,";
+  // }
+  // s = s.substring(0, s.length() - 1);
+  // s += ")";
+  // return s;
+  // }
 
-  String getInsertStatementFirstPart(String schema, String table, boolean replace) {
+  String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table, boolean replace) {
     String action = replace ? "REPLACE" : "INSERT";
-    String s = action + " INTO `" + schema + "`.`" + table + "` (";
+    String s = action + " INTO " + databaseType.escape(schema) + "." + databaseType.escape(table.name) + " (";
     for (String k : map.keySet()) {
-      s += "`" + k + "`, ";
+      s += databaseType.escape(k) + ", ";
     }
     s = s.substring(0, s.length() - 2);
     s += ")";

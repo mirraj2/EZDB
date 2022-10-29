@@ -1,6 +1,7 @@
 package ez.helper;
 
 import ez.DB;
+import ez.DB.DatabaseType;
 import ez.Table;
 
 import ox.Log;
@@ -15,6 +16,8 @@ public class ColumnBuilder {
    */
   protected boolean first = false;
 
+  protected DatabaseType databaseType = DatabaseType.MYSQL;
+
   protected ColumnBuilder(String table) {
     this.table = table;
   }
@@ -25,7 +28,7 @@ public class ColumnBuilder {
   }
 
   public ColumnBuilder type(Class<?> type) {
-    return type(Table.getType(type));
+    return type(Table.getType(databaseType, type));
   }
 
   public ColumnBuilder type(String type) {
@@ -101,7 +104,7 @@ public class ColumnBuilder {
   }
 
   public static ColumnBuilder create(String table, String name, Class<?> type) {
-    return create(table, name, Table.getType(type));
+    return create(table, name, Table.getType(DatabaseType.MYSQL, type));
   }
 
   public static ColumnBuilder create(String table, String name, String type) {

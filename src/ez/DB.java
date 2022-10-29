@@ -7,6 +7,7 @@ import static ox.util.Functions.map;
 import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
+import static ox.util.Utils.format;
 import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
@@ -76,33 +77,60 @@ public class DB {
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
+  public final DatabaseType databaseType;
   public final String host, user, pass;
-  public final String schema;
+  public final String catalog, schema;
   public final boolean ssl;
 
   private final int maxConnections;
 
-  protected DB(String schema) {
+  protected DB(DatabaseType databaseType, String schema) {
+    this.databaseType = databaseType;
     host = user = pass = "";
-    this.schema = schema;
+    if (databaseType == DatabaseType.POSTGRES) {
+      this.catalog = schema;
+      this.schema = "public";
+    } else {
+      this.catalog = "";
+      this.schema = schema;
+    }
     ssl = false;
     source = null;
     this.maxConnections = 10;
   }
 
   public DB(String host, String user, String pass, String schema) {
-    this(host, user, pass, schema, false);
+    this(DatabaseType.MYSQL, host, user, pass, schema);
   }
 
-  public DB(String host, String user, String pass, String schema, boolean ssl) {
-    this(host, user, pass, schema, ssl, 10);
+  public DB(DatabaseType databaseType, String host, String user, String pass, String schema) {
+    this(databaseType, host, user, pass, schema, false);
+  }
+
+  public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl) {
+    this(databaseType, host, user, pass, schema, ssl, 10);
   }
 
   public DB(String host, String user, String pass, String schema, boolean ssl, int maxConnections) {
+    this(DatabaseType.MYSQL, host, user, pass, schema, ssl, maxConnections);
+  }
+
+  public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl,
+      int maxConnections) {
+    this.databaseType = checkNotNull(databaseType);
     this.host = host;
     this.user = user;
     this.pass = pass;
-    this.schema = normalize(schema);
+
+    schema = normalize(schema);
+    if (databaseType == DatabaseType.POSTGRES) {
+      this.catalog = schema;
+      this.schema = "public";
+    } else {
+      this.catalog = "";
+      this.schema = schema;
+    }
+
     this.ssl = ssl;
     this.maxConnections = maxConnections;
 
@@ -112,15 +140,25 @@ public class DB {
       throw propagate(e);
     }
 
-    String url = "jdbc:mysql://" + host + ":3306/" + schema;
-    if (ssl) {
-      url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
-    } else {
-      url += "?useSSL=false";
+    String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
+    int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
+
+    String url = format("jdbc:{0}://{1}:{2}/{3}", type, host, port, schema);
+
+    if (databaseType == DatabaseType.MYSQL) {
+      if (ssl) {
+        url += "?requireSSL=true&useSSL=true&verifyServerCertificate=true";
+      } else {
+        url += "?useSSL=false";
+      }
+      // url += "&useLegacyDatetimeCode=false";
+      // url += "&serverTimezone=UTC";
+      url += "&characterEncoding=utf8";
     }
-    // url += "&useLegacyDatetimeCode=false";
-    // url += "&serverTimezone=UTC";
-    url += "&characterEncoding=utf8";
+
+    if (debug) {
+      Log.debug(url);
+    }
 
     source = new HikariDataSource();
     source.setJdbcUrl(url);
@@ -144,7 +182,7 @@ public class DB {
         throw propagate(e);
       }
       Log.info("Creating schema: " + schema);
-      DB temp = new DB(host, user, pass, "", ssl);
+      DB temp = new DB(databaseType, host, user, pass, "", ssl);
       temp.createSchema(schema);
       temp.shutdown();
     }
@@ -159,7 +197,7 @@ public class DB {
         createSchema(schema);
       }
     }
-    return new DB(host, user, pass, schema, ssl, maxConnections);
+    return new DB(databaseType, host, user, pass, schema, ssl, maxConnections);
   }
 
   /**
@@ -170,8 +208,20 @@ public class DB {
     return this;
   }
 
+  public void createDatabase(String database) {
+    if (isPostgres()) {
+      execute(format("CREATE DATABASE \"{0}\" ENCODING 'UTF8'", database));
+    } else {
+      throw new IllegalStateException();
+    }
+  }
+
   public void createSchema(String schema) {
-    execute("CREATE DATABASE `" + schema + "` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin");
+    if (isPostgres()) {
+      execute(format("CREATE SCHEMA {0}", databaseType.escape(schema)));
+    } else {
+      execute(format("CREATE DATABASE `{0}` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin", schema));
+    }
   }
 
   /**
@@ -367,7 +417,7 @@ public class DB {
   /**
    * Returns the id of the inserted row.
    */
-  public Long insert(String table, Row row) {
+  public Long insert(Table table, Row row) {
     insert(table, ImmutableList.of(row));
     Object o = row.getObject("id");
     if (o instanceof Long) {
@@ -420,7 +470,7 @@ public class DB {
     }
   }
 
-  public void replace(String table, Row row) {
+  public void replace(Table table, Row row) {
     replace(table, ImmutableList.of(row));
   }
 
@@ -428,19 +478,23 @@ public class DB {
    * REPLACE works exactly like INSERT, except that the old row is deleted before the new row is inserted (based on
    * primary key or unique index)
    */
-  public void replace(String table, List<Row> rows) {
+  public void replace(Table table, List<Row> rows) {
     insert(table, rows, 16_000, true);
   }
 
-  public void insert(String table, List<Row> rows) {
+  public void insert(Table table, List<Row> rows) {
     insert(table, rows, 16_000);
   }
 
-  public void insert(String table, List<Row> rows, int chunkSize) {
+  public void insert(String tableName, List<Row> rows, int chunkSize) {
+    insert(new Table(tableName), rows, chunkSize);
+  }
+
+  public void insert(Table table, List<Row> rows, int chunkSize) {
     insert(table, rows, chunkSize, false);
   }
 
-  private void insert(String table, List<Row> rows, int chunkSize, boolean replace) {
+  private void insert(Table table, List<Row> rows, int chunkSize, boolean replace) {
     if (Iterables.isEmpty(rows)) {
       return;
     }
@@ -462,10 +516,10 @@ public class DB {
 
     try {
       Row firstRow = first(rows);
-      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(schema, table, replace));
+      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(databaseType, schema, table, replace));
       sb.append(" VALUES ");
 
-      final String placeholders = getInsertPlaceholders(firstRow.map.size());
+      final String placeholders = getInsertPlaceholders(table, firstRow);
       for (int i = 0; i < rows.size(); i++) {
         if (i != 0) {
           sb.append(",");
@@ -507,7 +561,25 @@ public class DB {
       close(statement);
       close(conn);
     }
+  }
 
+  private String getInsertPlaceholders(Table table, Row row) {
+    final StringBuilder sb = new StringBuilder("(");
+    for (String key : row) {
+      String columnType = table.getColumns().get(key);
+      if (columnType.equals("jsonb")) {
+        sb.append("?::JSON");
+      } else {
+        sb.append('?');
+      }
+      sb.append(',');
+    }
+    if (sb.length() > 1) {
+      sb.setCharAt(sb.length() - 1, ')');
+    } else {
+      sb.append(')');
+    }
+    return sb.toString();
   }
 
   private String getInsertPlaceholders(int placeholderCount) {
@@ -594,10 +666,10 @@ public class DB {
     return n.longValue();
   }
 
-  public Set<String> getSchemas() {
+  public XSet<String> getSchemas() {
     log("getSchemas()");
 
-    Set<String> ret = Sets.newHashSet();
+    XSet<String> ret = XSet.create();
     Connection c = getConnection();
     try {
       ResultSet rs = c.getMetaData().getCatalogs();
@@ -610,13 +682,20 @@ public class DB {
     } finally {
       close(c);
     }
+
     return ret;
   }
 
   public boolean hasTable(String table) {
-    return null != selectSingleRow("SELECT `COLUMN_NAME`"
-        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
-        schema, table);
+    if (databaseType == DatabaseType.POSTGRES) {
+      return null != selectSingleRow("SELECT table_name"
+          + " FROM INFORMATION_SCHEMA.tables WHERE table_catalog = ? AND table_name = ? LIMIT 1",
+          schema, table);
+    } else {
+      return null != selectSingleRow("SELECT `COLUMN_NAME`"
+          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
+          schema, table);
+    }
   }
 
   public boolean hasColumn(String table, String column) {
@@ -664,6 +743,8 @@ public class DB {
   public boolean addTable(Table table) {
     checkNotNull(table);
 
+    table.databaseType(databaseType);
+
     if (getTables(true).contains(table.name)) {
       return false;
     }
@@ -693,7 +774,7 @@ public class DB {
   }
 
   public void addColumn(String table, String column, Class<?> columnType) {
-    addColumn(table, column, Table.getType(columnType));
+    addColumn(table, column, Table.getType(databaseType, columnType));
   }
 
   public void addColumn(String table, String column, String columnType) {
@@ -733,9 +814,16 @@ public class DB {
   }
 
   protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
-    List<String> cols = map(columns, s -> '`' + s + '`');
-    String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
-    execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
+    List<String> cols = map(columns, s -> databaseType.escape(s));
+    if (isPostgres()) {
+      String s = unique ? "UNIQUE " : "";
+
+      execute("CREATE " + s + "INDEX " + databaseType.escape(indexName) + " ON " + databaseType.escape(table) + " ("
+          + Joiner.on(',').join(cols) + ")");
+    } else {
+      String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
+      execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
+    }
   }
 
   /**
@@ -753,7 +841,7 @@ public class DB {
   }
 
   public void deleteTable(String table) {
-    execute("DROP TABLE `" + schema + "`.`" + table + "`");
+    execute("DROP TABLE " + databaseType.escape(schema) + "." + databaseType.escape(table));
   }
 
   public void deleteTables(XList<String> tables) {
@@ -994,6 +1082,14 @@ public class DB {
     }
   }
 
+  // private boolean isMySql() {
+  // return databaseType == DatabaseType.MYSQL;
+  // }
+
+  private boolean isPostgres() {
+    return databaseType == DatabaseType.POSTGRES;
+  }
+
   public static enum IsolationLevel {
     READ_UNCOMMITTED(1),
     READ_COMMITTED(2),
@@ -1016,6 +1112,21 @@ public class DB {
       return true;
     }
 
+  }
+
+  public static enum DatabaseType {
+    MYSQL('`'), POSTGRES('"');
+
+    private final char escapeChar;
+
+    private DatabaseType(char escapeChar) {
+      this.escapeChar = escapeChar;
+
+    }
+
+    public String escape(String s) {
+      return escapeChar + s + escapeChar;
+    }
   }
 
 }

@@ -22,6 +22,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import ez.DB.DatabaseType;
+
 import ox.Json;
 import ox.Money;
 import ox.Percent;
@@ -40,6 +42,7 @@ public class Table {
   public static final String CASE_INSENSITIVE_COLLATION = "utf8mb4_0900_ai_ci";
 
   private static final Map<Class<?>, String> columnTypesMap = Maps.newConcurrentMap();
+  private static final Map<Class<?>, String> postgresTypesMap = Maps.newConcurrentMap();
 
   public final String name;
 
@@ -54,18 +57,39 @@ public class Table {
 
   public boolean caseSensitive = true;
 
+  private DatabaseType databaseType = DatabaseType.MYSQL;
+
   public Table(String name) {
+    this(name, DatabaseType.MYSQL);
+  }
+
+  public Table(String name, DatabaseType databaseType) {
     this.name = name;
+    this.databaseType = databaseType;
+  }
+
+  public DatabaseType getDatabaseType() {
+    return databaseType;
+  }
+
+  public Table databaseType(DatabaseType databaseType) {
+    this.databaseType = databaseType;
+    return this;
+  }
+
+  public Table postgres() {
+    this.databaseType = DatabaseType.POSTGRES;
+    return this;
   }
 
   public Table column(String name, Class<?> type) {
     columnClasses.put(name, type);
-    return column(name, getType(type));
+    return column(name, getType(databaseType, type));
   }
 
   public Table column(String name, String type) {
     checkState(!columns.containsKey(name), "Already added column with name: " + name);
-    columns.put(name, type.toUpperCase());
+    columns.put(name, type);
     lastColumnAdded = name;
     return this;
   }
@@ -85,7 +109,7 @@ public class Table {
 
   public Table primary(String name, Class<?> type) {
     columnClasses.put(name, type);
-    return primary(name, getType(type));
+    return primary(name, getType(databaseType, type));
   }
 
   public Table primary(String name, String type) {
@@ -102,7 +126,6 @@ public class Table {
     indices.add(new Index(ImmutableList.copyOf(columns), false));
     return this;
   }
-
 
   public Table uniqueIndex(boolean autoConvertStrings) {
     checkState(!lastColumnAdded.isEmpty());
@@ -140,7 +163,16 @@ public class Table {
   }
 
   public static String getType(Class<?> type) {
-    String ret = columnTypesMap.get(type);
+    return getType(DatabaseType.MYSQL, type);
+  }
+
+  public static String getType(DatabaseType databaseType, Class<?> type) {
+    String ret;
+    if (databaseType == DatabaseType.POSTGRES) {
+      ret = postgresTypesMap.get(type);
+    } else {
+      ret = columnTypesMap.get(type);
+    }
     if (ret == null) {
       throw new RuntimeException("Unsupported type: " + type);
     }
@@ -152,29 +184,39 @@ public class Table {
       throw new RuntimeException("You must have at least one column!");
     }
 
-    String s = "CREATE TABLE `" + schema + "`.`" + name + "`(\n";
-    for (Entry<String, String> e : columns.entrySet()) {
-      s += "`" + e.getKey() + "`" + " " + e.getValue() + ",\n";
-    }
-    if (!primaryIndices.isEmpty()) {
-      s += "PRIMARY KEY (";
-      for (Integer i : primaryIndices) {
-        String primary = Iterables.get(columns.keySet(), i);
-        s += "`" + primary + "`,";
+    if (databaseType == DatabaseType.MYSQL) {
+      String s = "CREATE TABLE `" + schema + "`.`" + name + "`(\n";
+      for (Entry<String, String> e : columns.entrySet()) {
+        s += "`" + e.getKey() + "`" + " " + e.getValue() + ",\n";
       }
-      s = s.substring(0, s.length() - 1);
-      s += "),\n";
-    }
-    s = s.substring(0, s.length() - 2);
-    s += ")\n";
-    s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
-    if(caseSensitive) {
-      s += "utf8mb4_bin";
+      if (!primaryIndices.isEmpty()) {
+        s += "PRIMARY KEY (";
+        for (Integer i : primaryIndices) {
+          String primary = Iterables.get(columns.keySet(), i);
+          s += "`" + primary + "`,";
+        }
+        s = s.substring(0, s.length() - 1);
+        s += "),\n";
+      }
+      s = s.substring(0, s.length() - 2);
+      s += ")\n";
+      s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
+      if (caseSensitive) {
+        s += "utf8mb4_bin";
+      } else {
+        s += CASE_INSENSITIVE_COLLATION;
+      }
+      s += ";";
+      return s;
     } else {
-      s += CASE_INSENSITIVE_COLLATION;
+      String s = "CREATE TABLE " + databaseType.escape(name) + " (\n";
+      for (Entry<String, String> e : columns.entrySet()) {
+        s += databaseType.escape(e.getKey()) + " " + e.getValue() + ",\n";
+      }
+      s = s.substring(0, s.length() - 2);
+      s += ");\n";
+      return s;
     }
-    s += ";";
-    return s;
   }
 
   public Map<String, String> getColumns() {
@@ -273,6 +315,10 @@ public class Table {
     columnTypesMap.put(LocalTime.class, "CHAR(5)");
     columnTypesMap.put(Percent.class, "VARCHAR(20)");
     columnTypesMap.put(ZoneId.class, "VARCHAR(64)");
+
+    postgresTypesMap.putAll(columnTypesMap);
+    postgresTypesMap.put(Double.class, "double precision");
+    postgresTypesMap.put(Json.class, "jsonb");
   }
 
   public static void registerColumn(Class<?> columnType, String sqlType) {
