@@ -573,7 +573,7 @@ public class DB {
     final StringBuilder sb = new StringBuilder("(");
     for (String key : row) {
       String columnType = table.getColumns().get(key);
-      if (columnType.equals("jsonb")) {
+      if ("jsonb".equals(columnType)) {
         sb.append("?::JSON");
       } else {
         sb.append('?');
