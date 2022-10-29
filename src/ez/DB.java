@@ -160,6 +160,8 @@ public class DB {
       // url += "&useLegacyDatetimeCode=false";
       // url += "&serverTimezone=UTC";
       url += "&characterEncoding=utf8";
+    } else if(databaseType==DatabaseType.POSTGRES) {
+      // url += "?adaptiveFetch=true&defaultRowFetchSize=64&maxResultBuffer=128M";
     }
 
     if (debug) {
@@ -173,6 +175,10 @@ public class DB {
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  public String escape(String s) {
+    return databaseType.escape(s);
   }
 
   /**
@@ -349,6 +355,12 @@ public class DB {
     try {
       statement = conn.prepareStatement(query);
 
+      if (isPostgres()) {
+        // these two lines enable streaming of results
+        conn.setAutoCommit(false);
+        statement.setFetchSize(10_000);
+      }
+
       for (int c = 0; c < args.length; c++) {
         statement.setObject(c + 1, convert(args[c]));
       }
@@ -411,7 +423,7 @@ public class DB {
     int offset = 0;
 
     while (true) {
-      XList<Row> rows = select(query + " LIMIT " + offset + ", " + chunkSize, args);
+      XList<Row> rows = select(query + " LIMIT " + chunkSize + " OFFSET " + offset, args);
       callback.accept(rows);
       offset += chunkSize;
       if (rows.size() < chunkSize) {
@@ -641,7 +653,7 @@ public class DB {
     PreparedStatement statement = null;
     String query = "";
     try {
-      query = getFirst(rows, null).getUpdateStatement(schema, table);
+      query = getFirst(rows, null).getUpdateStatement(databaseType, schema, table);
       log(query);
 
       statement = conn.prepareStatement(query);
@@ -705,9 +717,15 @@ public class DB {
   }
 
   public boolean hasColumn(String table, String column) {
+    if (databaseType == DatabaseType.POSTGRES) {
+      return null != selectSingleRow("SELECT column_name"
+          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_catalog = ? AND table_name = ? AND column_name = ? LIMIT 1",
+          schema, table, column);
+    } else {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
-        schema, table, column);
+          schema, table, column);
+    }
   }
 
   public XSet<String> getTables() {

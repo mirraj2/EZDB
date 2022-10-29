@@ -123,11 +123,11 @@ public class Row implements Iterable<String> {
     return s;
   }
 
-  String getUpdateStatement(String schema, String table) {
-    String s = "UPDATE `" + schema + "`.`" + table + "` SET ";
+  String getUpdateStatement(DatabaseType databaseType, String schema, String table) {
+    String s = "UPDATE " + databaseType.escape(schema) + "." + databaseType.escape(table) + " SET ";
     for (String k : map.keySet()) {
       if (!k.equals("id")) {
-        s += "`" + k + "` = ?, ";
+        s += databaseType.escape(k) + " = ?, ";
       }
     }
     s = s.substring(0, s.length() - 2);

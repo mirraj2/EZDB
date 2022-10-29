@@ -16,6 +16,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import org.postgresql.util.PGobject;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -271,6 +273,15 @@ public class Table {
     row.map.forEach((k, v) -> {
       if (v == null && autoConvertColumns.contains(k)) {
         v = "";
+      }
+      if (v instanceof PGobject) {
+        PGobject o = (PGobject) v;
+        String type = o.getType();
+        if (type.equals("jsonb")) {
+          v = new Json(o.getValue());
+        } else {
+          throw new RuntimeException("Unhandled case: " + type);
+        }
       }
       Reflection.set(ret, k, v);
     });

@@ -1,5 +1,7 @@
 package ez.helper;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import ez.DB;
 import ez.DB.DatabaseType;
 import ez.Table;
@@ -78,8 +80,11 @@ public class ColumnBuilder {
       return;
     }
 
-    StringBuilder sb = new StringBuilder("ALTER TABLE `");
-    sb.append(table).append("` ADD `").append(columnName).append("` ").append(type);
+    DatabaseType databaseType = db.databaseType;
+
+    StringBuilder sb = new StringBuilder("ALTER TABLE ");
+    sb.append(databaseType.escape(table)).append(" ADD ")
+        .append(databaseType.escape(columnName)).append(" ").append(type);
     if (!caseSensitive) {
       sb.append(" COLLATE " + Table.CASE_INSENSITIVE_COLLATION);
     }
@@ -91,9 +96,11 @@ public class ColumnBuilder {
     }
 
     if (first) {
+      checkState(databaseType != DatabaseType.POSTGRES, "Postgres doesn't support FIRST");
       sb.append(" FIRST");
     } else if (after != null) {
-      sb.append(" AFTER `").append(after).append('`');
+      checkState(databaseType != DatabaseType.POSTGRES, "Postgres doesn't support AFTER");
+      sb.append(" AFTER ").append(databaseType.escape(after));
     }
 
     db.execute(sb.toString());
