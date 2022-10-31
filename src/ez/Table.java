@@ -22,6 +22,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import ez.helper.ForeignKeyBuilder;
+import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
 import ox.Json;
@@ -52,6 +54,8 @@ public class Table {
   private final List<Integer> primaryIndices = Lists.newArrayList();
   private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
+
+  private final List<ForeignKeyConstraint> foreignKeyConstraints = Lists.newArrayList();
 
   protected String lastColumnAdded = "";
 
@@ -96,6 +100,29 @@ public class Table {
 
   public Table varchar(String name, int n) {
     return column(name, "VARCHAR(" + n + ")");
+  }
+
+  public Table linkColumn(String name, Class<?> type, String foreignTable, String foreignColumnName,
+      String foreignKeyName) {
+    columnClasses.put(name, type);
+    return linkColumn(name, getType(type), foreignTable, foreignColumnName, foreignKeyName);
+  }
+
+  public Table linkColumn(String name, String type, String foreignTable, String foreignColumnName,
+      String foreignKeyName) {
+    foreignKeyConstraints
+        .add(ForeignKeyBuilder.create(this.name, name, foreignTable, foreignColumnName, foreignKeyName));
+    return column(name, type);
+  }
+
+  public Table linkColumn(String name, Class<?> type, String foreignTable, String foreignColumnName) {
+    columnClasses.put(name, type);
+    return linkColumn(name, getType(type), foreignTable, foreignColumnName);
+  }
+
+  public Table linkColumn(String name, String type, String foreignTable, String foreignColumnName) {
+    foreignKeyConstraints.add(ForeignKeyBuilder.create(this.name, name, foreignTable, foreignColumnName));
+    return column(name, type);
   }
 
   /**

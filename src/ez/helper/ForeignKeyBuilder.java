@@ -1,54 +1,62 @@
 package ez.helper;
 
-import ez.DB;
-
-import ox.Log;
-
 public class ForeignKeyBuilder {
 
-  protected String foreigKeyName, sourceTable, sourceColumnName, foreignTable, foreignColumnName;
+  protected String constraintName, sourceTable, sourceColumnName, foreignTable, foreignColumnName;
 
-  protected ForeignKeyBuilder(String sourceTable, String sourceColumnName, String foreignTable,
-      String foreignColumnName) {
+  protected ForeignKeyBuilder(String sourceTable) {
     this.sourceTable = sourceTable;
-    this.sourceColumnName = sourceColumnName;
-    this.foreignTable = foreignTable;
-    this.foreignColumnName = foreignColumnName;
   }
 
-  public ForeignKeyBuilder name(String foreignKeyName) {
-    this.foreigKeyName = foreignKeyName;
+  public ForeignKeyBuilder constraintName(String foreignKeyName) {
+    this.constraintName = foreignKeyName;
     return this;
   }
 
-  public void execute(DB db) {
-    if (db.hasForeignKey(sourceTable, sourceColumnName, foreignTable, foreignColumnName)) {
-      Log.warn("Foreign Key for " + sourceTable + "." + sourceColumnName + " referencing " + foreignTable + "."
-          + foreignColumnName + " already exists.");
-      return;
-    }
-
-    StringBuilder sb = new StringBuilder("ALTER TABLE `");
-    sb.append(sourceTable).append("` ADD");
-
-    if (!foreigKeyName.isEmpty()) {
-      sb.append(" CONSTRAINT ").append(foreigKeyName);
-    }
-
-    sb.append(" FOREIGN KEY (`").append(sourceColumnName).append("`) REFERENCES `").append(foreignTable).append("`(`")
-        .append(foreignColumnName).append("`)");
-
-    db.execute(sb.toString());
+  public ForeignKeyBuilder sourceColumn(String sourceColumn) {
+    this.sourceColumnName = sourceColumn;
+    return this;
   }
 
-  public static ForeignKeyBuilder create(String sourceTable, String sourceColumnName, String foreignTable,
+  public ForeignKeyBuilder foreignTable(String foreignTable) {
+    this.foreignTable = foreignTable;
+    return this;
+  }
+
+  public ForeignKeyBuilder foreignColumn(String foreignColumn) {
+    this.foreignColumnName = foreignColumn;
+    return this;
+  }
+
+  public ForeignKeyConstraint build() {
+
+    if (constraintName.isEmpty()) {
+      return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName);
+    } else {
+      return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName, constraintName);
+    }
+  }
+
+  public static ForeignKeyConstraint create(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName) {
-    return new ForeignKeyBuilder(sourceTable, sourceColumnName, foreignTable, foreignColumnName);
+    return createForeignKeyBuilder(sourceTable, sourceColumnName, foreignTable, foreignColumnName).build();
   }
 
-  public static ForeignKeyBuilder create(String sourceTable, String sourceColumnName, String foreignTable,
+  public static ForeignKeyConstraint create(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName, String foreignKeyName) {
-    return new ForeignKeyBuilder(sourceTable, sourceColumnName, foreignTable, foreignColumnName).name(foreignKeyName);
+    return createForeignKeyBuilder(sourceTable, sourceColumnName, foreignTable, foreignColumnName)
+        .constraintName(foreignKeyName).build();
+  }
+
+  private static ForeignKeyBuilder createForeignKeyBuilder(String sourceTable, String sourceColumnName,
+      String foreignTable,
+      String foreignColumnName) {
+    return new ForeignKeyBuilder(sourceTable).sourceColumn(sourceColumnName).foreignTable(foreignTable)
+        .foreignColumn(foreignColumnName);
+  }
+
+  public static ForeignKeyBuilder table(String sourceTable) {
+    return new ForeignKeyBuilder(sourceTable);
   }
 
 }

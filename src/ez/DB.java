@@ -611,8 +611,7 @@ public abstract class DB {
   }
 
   public void removeForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    execute("ALTER TABLE `" + sourceTable + "` DROP FOREIGN KEY "
-        + getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn));
+    removeForeignKey(sourceTable, getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn));
   }
 
   /**
