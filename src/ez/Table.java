@@ -225,6 +225,10 @@ public class Table {
         s = s.substring(0, s.length() - 1);
         s += "),\n";
       }
+      for (ForeignKeyConstraint fk : foreignKeyConstraints) {
+        s += fk.getCreationStatement();
+        s += ",\n";
+      }
       s = s.substring(0, s.length() - 2);
       s += ")\n";
       s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
