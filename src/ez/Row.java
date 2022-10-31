@@ -18,6 +18,7 @@ import ox.Json;
 import ox.Money;
 import ox.Percent;
 import ox.util.Utils;
+import ox.x.XOptional;
 
 public class Row implements Iterable<String> {
 
@@ -112,8 +113,9 @@ public class Row implements Iterable<String> {
   // return s;
   // }
 
-  String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table, boolean replace) {
-    String action = replace ? "REPLACE" : "INSERT";
+  String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table,
+      XOptional<String> uniqueIndexForReplace) {
+    String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isPresent() ? "REPLACE" : "INSERT";
     String s = action + " INTO " + databaseType.escape(schema) + "." + databaseType.escape(table.name) + " (";
     for (String k : map.keySet()) {
       s += databaseType.escape(k) + ", ";

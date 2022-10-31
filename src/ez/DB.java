@@ -2,6 +2,7 @@ package ez;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.getFirst;
 import static ox.util.Functions.map;
 import static ox.util.Utils.abbreviate;
@@ -160,7 +161,7 @@ public class DB {
       // url += "&useLegacyDatetimeCode=false";
       // url += "&serverTimezone=UTC";
       url += "&characterEncoding=utf8";
-    } else if(databaseType==DatabaseType.POSTGRES) {
+    } else if (databaseType == DatabaseType.POSTGRES) {
       // url += "?adaptiveFetch=true&defaultRowFetchSize=64&maxResultBuffer=128M";
     }
 
@@ -497,7 +498,11 @@ public class DB {
    * primary key or unique index)
    */
   public void replace(Table table, List<Row> rows) {
-    insert(table, rows, 16_000, true);
+    replace(table, rows, new ReplaceOptions("", XSet.create()));
+  }
+
+  public void replace(Table table, List<Row> rows, ReplaceOptions replaceOptions) {
+    insert(table, rows, 16_000, XOptional.of(replaceOptions));
   }
 
   public void insert(Table table, List<Row> rows) {
@@ -509,10 +514,10 @@ public class DB {
   }
 
   public void insert(Table table, List<Row> rows, int chunkSize) {
-    insert(table, rows, chunkSize, false);
+    insert(table, rows, chunkSize, XOptional.empty());
   }
 
-  private void insert(Table table, List<Row> rows, int chunkSize, boolean replace) {
+  private void insert(Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
     if (Iterables.isEmpty(rows)) {
       return;
     }
@@ -522,7 +527,7 @@ public class DB {
       for (int i = 0; i < rows.size(); i += chunkSize) {
         List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
         Stopwatch watch = Stopwatch.createStarted();
-        insert(table, chunk, chunkSize, replace);
+        insert(table, chunk, chunkSize, replaceOptions);
         Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
       }
       return;
@@ -534,7 +539,8 @@ public class DB {
 
     try {
       Row firstRow = first(rows);
-      StringBuilder sb = new StringBuilder(firstRow.getInsertStatementFirstPart(databaseType, schema, table, replace));
+      StringBuilder sb = new StringBuilder(
+          firstRow.getInsertStatementFirstPart(databaseType, schema, table, replaceOptions.map(o -> o.uniqueIndex)));
       sb.append(" VALUES ");
 
       final String placeholders = getInsertPlaceholders(table, firstRow);
@@ -545,7 +551,22 @@ public class DB {
         sb.append(placeholders);
       }
 
+      replaceOptions.ifPresent(o -> {
+        if (isPostgres()) {
+          checkState(!o.uniqueIndex.isEmpty(), "Postgres requires specifying the uniqueIndex for a replace.");
+          sb.append(" ON CONFLICT (" + escape(o.uniqueIndex) + ") DO UPDATE SET ");
+          for (String col : firstRow) {
+            if (!col.equalsIgnoreCase(o.uniqueIndex) && !o.columnsToIgnore.contains(col)) {
+              String escaped = escape(col);
+              sb.append(escaped).append("= excluded.").append(escaped).append(", ");
+            }
+          }
+          sb.setLength(sb.length() - 2);
+        }
+      });
+
       String s = sb.toString();
+
       log(s);
 
       statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
@@ -722,8 +743,8 @@ public class DB {
           + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_catalog = ? AND table_name = ? AND column_name = ? LIMIT 1",
           schema, table, column);
     } else {
-    return null != selectSingleRow("SELECT `COLUMN_NAME`"
-        + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
+      return null != selectSingleRow("SELECT `COLUMN_NAME`"
+          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
           schema, table, column);
     }
   }
@@ -1150,6 +1171,16 @@ public class DB {
 
     public String escape(String s) {
       return escapeChar + s + escapeChar;
+    }
+  }
+
+  public static class ReplaceOptions {
+    public final String uniqueIndex;
+    public final XSet<String> columnsToIgnore;
+
+    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore) {
+      this.uniqueIndex = normalize(uniqueIndex);
+      this.columnsToIgnore = checkNotNull(columnsToIgnore);
     }
   }
 
