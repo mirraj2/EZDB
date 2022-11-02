@@ -39,6 +39,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import org.postgresql.util.PGobject;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
@@ -328,9 +330,9 @@ public class DB {
 
   public XList<Row> select(String query, Object... args) {
     XList<Row> ret = XList.create();
-    stream(query, row -> {
+    stream(query, XOptional.empty(), false, row -> {
       ret.add(row);
-    }, false, args);
+    }, args);
     return ret;
   }
 
@@ -343,11 +345,11 @@ public class DB {
       } catch (SQLException e) {
         throw propagate(e);
       }
-    }, args);
+    }, XOptional.empty(), args);
     return ret;
   }
 
-  private void select(String query, Consumer<ResultSet> rowCallback, Object... args) {
+  private void select(String query, Consumer<ResultSet> rowCallback, XOptional<Integer> fetchSize, Object... args) {
     Stopwatch watch = Stopwatch.createStarted();
 
     Connection conn = getConnection();
@@ -359,7 +361,7 @@ public class DB {
       if (isPostgres()) {
         // these two lines enable streaming of results
         conn.setAutoCommit(false);
-        statement.setFetchSize(10_000);
+        statement.setFetchSize(fetchSize.orElse(10_000));
       }
 
       for (int c = 0; c < args.length; c++) {
@@ -385,10 +387,15 @@ public class DB {
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
-    stream(query, callback, true, args);
+    stream(query, XOptional.empty(), true, callback, args);
   }
 
-  public void stream(String query, Consumer<Row> callback, boolean reuseRows, Object... args) {
+  public void stream(String query, int fetchSize, Consumer<Row> callback, Object... args) {
+    stream(query, XOptional.of(fetchSize), true, callback, args);
+  }
+
+  public void stream(String query, XOptional<Integer> fetchSize, boolean reuseRows, Consumer<Row> callback,
+      Object... args) {
     Row row = new Row();
     List<String> labels = Lists.newArrayList();
     select(query, r -> {
@@ -410,6 +417,14 @@ public class DB {
           if (val instanceof Clob) {
             Clob clob = (Clob) val;
             val = clob.getSubString(1, Math.toIntExact(clob.length()));
+          } else if (val instanceof PGobject) {
+            PGobject o = (PGobject) val;
+            String type = o.getType();
+            if (type.equals("jsonb")) {
+              val = new Json(o.getValue());
+            } else {
+              throw new RuntimeException("Unhandled case: " + type);
+            }
           }
           theRow.with(labels.get(i - 1), val);
         }
@@ -417,7 +432,7 @@ public class DB {
       } catch (SQLException e) {
         throw propagate(e);
       }
-    }, args);
+    }, fetchSize, args);
   }
 
   public void streamBulk(String query, Consumer<XList<Row>> callback, int chunkSize, Object... args) {

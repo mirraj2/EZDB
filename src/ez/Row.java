@@ -63,7 +63,12 @@ public class Row implements Iterable<String> {
   }
 
   public Json getJson(String key) {
-    return new Json((String) map.get(key));
+    Object o = map.get(key);
+    if (o instanceof Json) {
+      return (Json) o;
+    } else {
+      return new Json((String) map.get(key));
+    }
   }
 
   public UUID getUUID(String key) {
