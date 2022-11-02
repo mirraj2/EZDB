@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import ez.DB.DatabaseType;
+import ez.misc.DatabaseType;
 
 import ox.Json;
 import ox.Money;

@@ -1,10 +1,6 @@
 package ez;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.Iterables.getFirst;
-import static ox.util.Functions.map;
 import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
@@ -15,12 +11,9 @@ import static ox.util.Utils.propagate;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
@@ -29,31 +22,29 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import org.postgresql.util.PGobject;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
 
+import ez.RowInserter.ReplaceOptions;
 import ez.Table.Index;
 import ez.helper.DebuggingData;
+import ez.misc.DatabaseType;
+import ez.misc.IsolationLevel;
+import ez.misc.RollbackException;
 
 import ox.Json;
 import ox.Log;
@@ -64,7 +55,7 @@ import ox.x.XList;
 import ox.x.XOptional;
 import ox.x.XSet;
 
-public class DB {
+public abstract class DB {
 
   public static boolean debug = false;
   public static int maxDebugLength = 1000;
@@ -85,7 +76,7 @@ public class DB {
   public final String catalog, schema;
   public final boolean ssl;
 
-  private final int maxConnections;
+  protected final int maxConnections;
 
   protected DB(DatabaseType databaseType, String schema) {
     this.databaseType = databaseType;
@@ -100,22 +91,6 @@ public class DB {
     ssl = false;
     source = null;
     this.maxConnections = 10;
-  }
-
-  public DB(String host, String user, String pass, String schema) {
-    this(DatabaseType.MYSQL, host, user, pass, schema);
-  }
-
-  public DB(DatabaseType databaseType, String host, String user, String pass, String schema) {
-    this(databaseType, host, user, pass, schema, false);
-  }
-
-  public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl) {
-    this(databaseType, host, user, pass, schema, ssl, 10);
-  }
-
-  public DB(String host, String user, String pass, String schema, boolean ssl, int maxConnections) {
-    this(DatabaseType.MYSQL, host, user, pass, schema, ssl, maxConnections);
   }
 
   public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl,
@@ -184,36 +159,9 @@ public class DB {
     return databaseType.escape(s);
   }
 
-  /**
-   * Creates the schema if it doesn't already exist.
-   */
-  public DB ensureSchemaExists() {
-    Connection connection = null;
-    try {
-      connection = getConnection();
-      close(connection);
-    } catch (Exception e) {
-      if (!e.getMessage().contains("Unknown database")) {
-        throw propagate(e);
-      }
-      Log.info("Creating schema: " + schema);
-      DB temp = new DB(databaseType, host, user, pass, "", ssl);
-      temp.createSchema(schema);
-      temp.shutdown();
-    }
-    return this;
-  }
+  public abstract DB ensureSchemaExists();
 
-  public DB usingSchema(String schema) {
-    schema = normalize(schema);
-    if (!schema.isEmpty()) {
-      checkArgument(isValidName(schema));
-      if (!getSchemas().contains(schema.toLowerCase())) {
-        createSchema(schema);
-      }
-    }
-    return new DB(databaseType, host, user, pass, schema, ssl, maxConnections);
-  }
+  public abstract DB usingSchema(String schema);
 
   /**
    * Imports a table into the current schema.
@@ -223,21 +171,9 @@ public class DB {
     return this;
   }
 
-  public void createDatabase(String database) {
-    if (isPostgres()) {
-      execute(format("CREATE DATABASE \"{0}\" ENCODING 'UTF8'", database));
-    } else {
-      throw new IllegalStateException();
-    }
-  }
+  public abstract void createDatabase(String database);
 
-  public void createSchema(String schema) {
-    if (isPostgres()) {
-      execute(format("CREATE SCHEMA {0}", databaseType.escape(schema)));
-    } else {
-      execute(format("CREATE DATABASE `{0}` DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin", schema));
-    }
-  }
+  public abstract void createSchema(String schema);
 
   /**
    * Checks if this is a valid name for a table, column, etc. Must consist of only letters, numbers, and underscores.
@@ -350,40 +286,7 @@ public class DB {
   }
 
   private void select(String query, Consumer<ResultSet> rowCallback, XOptional<Integer> fetchSize, Object... args) {
-    Stopwatch watch = Stopwatch.createStarted();
-
-    Connection conn = getConnection();
-    PreparedStatement statement = null;
-    ResultSet r = null;
-    try {
-      statement = conn.prepareStatement(query);
-
-      if (isPostgres()) {
-        // these two lines enable streaming of results
-        conn.setAutoCommit(false);
-        statement.setFetchSize(fetchSize.orElse(10_000));
-      }
-
-      for (int c = 0; c < args.length; c++) {
-        statement.setObject(c + 1, convert(args[c]));
-      }
-      try {
-        r = statement.executeQuery();
-      } catch (Exception e) {
-        System.err.println("Problem with query: " + query);
-        throw propagate(e);
-      }
-      while (r.next()) {
-        rowCallback.accept(r);
-      }
-    } catch (Exception e) {
-      throw propagate(e);
-    } finally {
-      log(query, watch, args);
-      close(r);
-      close(statement);
-      close(conn);
-    }
+    new RowSelector().select(this, query, rowCallback, fetchSize, args);
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
@@ -396,43 +299,7 @@ public class DB {
 
   public void stream(String query, XOptional<Integer> fetchSize, boolean reuseRows, Consumer<Row> callback,
       Object... args) {
-    Row row = new Row();
-    List<String> labels = Lists.newArrayList();
-    select(query, r -> {
-      try {
-        if (labels.isEmpty()) {
-          ResultSetMetaData metadata = r.getMetaData();
-          for (int i = 1; i <= metadata.getColumnCount(); i++) {
-            labels.add(metadata.getColumnLabel(i));
-          }
-        }
-        Row theRow = row;
-        if (reuseRows) {
-          theRow.map.clear();
-        } else {
-          theRow = new Row();
-        }
-        for (int i = 1; i <= labels.size(); i++) {
-          Object val = r.getObject(i);
-          if (val instanceof Clob) {
-            Clob clob = (Clob) val;
-            val = clob.getSubString(1, Math.toIntExact(clob.length()));
-          } else if (val instanceof PGobject) {
-            PGobject o = (PGobject) val;
-            String type = o.getType();
-            if (type.equals("jsonb")) {
-              val = new Json(o.getValue());
-            } else {
-              throw new RuntimeException("Unhandled case: " + type);
-            }
-          }
-          theRow.with(labels.get(i - 1), val);
-        }
-        callback.accept(theRow);
-      } catch (SQLException e) {
-        throw propagate(e);
-      }
-    }, fetchSize, args);
+    new RowSelector().stream(this, query, fetchSize, reuseRows, callback, args);
   }
 
   public void streamBulk(String query, Consumer<XList<Row>> callback, int chunkSize, Object... args) {
@@ -461,47 +328,7 @@ public class DB {
   }
 
   public void insertRawRows(String table, List<? extends Iterable<?>> rows) {
-    if (rows.isEmpty()) {
-      return;
-    }
-
-    Connection conn = getConnection();
-    PreparedStatement statement = null;
-
-    try {
-      StringBuilder sb = new StringBuilder("INSERT INTO `" + schema + "`.`" + table + "` VALUES ");
-
-      final String placeholders = getInsertPlaceholders(Iterables.size(rows.get(0)));
-      for (int i = 0; i < rows.size(); i++) {
-        if (i != 0) {
-          sb.append(",");
-        }
-        sb.append(placeholders);
-      }
-
-      String s = sb.toString();
-      log(s);
-
-      statement = conn.prepareStatement(s, Statement.NO_GENERATED_KEYS);
-
-      int c = 1;
-      for (Iterable<? extends Object> row : rows) {
-        for (Object o : row) {
-          if (o == NULL) {
-            statement.setObject(c++, null);
-          } else {
-            statement.setObject(c++, o);
-          }
-        }
-      }
-      statement.execute();
-
-    } catch (Exception e) {
-      throw propagate(e);
-    } finally {
-      close(statement);
-      close(conn);
-    }
+    new RowInserter().insertRawRows(this, table, rows);
   }
 
   public void replace(Table table, Row row) {
@@ -533,118 +360,7 @@ public class DB {
   }
 
   private void insert(Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
-    if (Iterables.isEmpty(rows)) {
-      return;
-    }
-
-    // break the inserts into chunks
-    if (rows.size() > chunkSize) {
-      for (int i = 0; i < rows.size(); i += chunkSize) {
-        List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
-        Stopwatch watch = Stopwatch.createStarted();
-        insert(table, chunk, chunkSize, replaceOptions);
-        Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
-      }
-      return;
-    }
-
-    Connection conn = getConnection();
-    PreparedStatement statement = null;
-    ResultSet generatedKeys = null;
-
-    try {
-      Row firstRow = first(rows);
-      StringBuilder sb = new StringBuilder(
-          firstRow.getInsertStatementFirstPart(databaseType, schema, table, replaceOptions.map(o -> o.uniqueIndex)));
-      sb.append(" VALUES ");
-
-      final String placeholders = getInsertPlaceholders(table, firstRow);
-      for (int i = 0; i < rows.size(); i++) {
-        if (i != 0) {
-          sb.append(",");
-        }
-        sb.append(placeholders);
-      }
-
-      replaceOptions.ifPresent(o -> {
-        if (isPostgres()) {
-          checkState(!o.uniqueIndex.isEmpty(), "Postgres requires specifying the uniqueIndex for a replace.");
-          sb.append(" ON CONFLICT (" + escape(o.uniqueIndex) + ") DO UPDATE SET ");
-          for (String col : firstRow) {
-            if (!col.equalsIgnoreCase(o.uniqueIndex) && !o.columnsToIgnore.contains(col)) {
-              String escaped = escape(col);
-              sb.append(escaped).append("= excluded.").append(escaped).append(", ");
-            }
-          }
-          sb.setLength(sb.length() - 2);
-        }
-      });
-
-      String s = sb.toString();
-
-      log(s);
-
-      statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
-
-      int c = 1;
-      for (Row row : rows) {
-        for (Object o : row.map.values()) {
-          Object converted = convert(o);
-          statement.setObject(c++, converted);
-        }
-      }
-      statement.execute();
-      generatedKeys = statement.getGeneratedKeys();
-
-      Iterator<Row> iter = rows.iterator();
-      while (generatedKeys.next() && iter.hasNext()) {
-        Object key = generatedKeys.getObject(1);
-        if (key instanceof Long) {
-          iter.next().with("id", key);
-        } else if (key instanceof Number) {
-          iter.next().with("id", ((Number) key).longValue());
-        } else {
-          iter.next().with("id", key);
-        }
-      }
-
-    } catch (Exception e) {
-      throw propagate(e);
-    } finally {
-      close(generatedKeys);
-      close(statement);
-      close(conn);
-    }
-  }
-
-  private String getInsertPlaceholders(Table table, Row row) {
-    final StringBuilder sb = new StringBuilder("(");
-    for (String key : row) {
-      String columnType = table.getColumns().get(key);
-      if ("jsonb".equals(columnType)) {
-        sb.append("?::JSON");
-      } else {
-        sb.append('?');
-      }
-      sb.append(',');
-    }
-    if (sb.length() > 1) {
-      sb.setCharAt(sb.length() - 1, ')');
-    } else {
-      sb.append(')');
-    }
-    return sb.toString();
-  }
-
-  private String getInsertPlaceholders(int placeholderCount) {
-    final StringBuilder builder = new StringBuilder("(");
-    for (int i = 0; i < placeholderCount; i++) {
-      if (i != 0) {
-        builder.append(",");
-      }
-      builder.append("?");
-    }
-    return builder.append(")").toString();
+    new RowInserter().insert(this, table, rows, chunkSize, replaceOptions);
   }
 
   public void truncate(String tableName) {
@@ -656,24 +372,7 @@ public class DB {
   }
 
   public int update(String query, Object... args) {
-    log(query);
-
-    Connection conn = getConnection();
-    PreparedStatement statement = null;
-    try {
-      statement = conn.prepareStatement(query);
-      int c = 1;
-      for (Object arg : args) {
-        statement.setObject(c++, convert(arg));
-      }
-      return statement.executeUpdate();
-    } catch (Exception e) {
-      System.err.println("query: " + query);
-      throw propagate(e);
-    } finally {
-      close(statement);
-      close(conn);
-    }
+    return new RowUpdater().update(this, query, args);
   }
 
   public void update(String table, Row row) {
@@ -681,37 +380,7 @@ public class DB {
   }
 
   public void update(String table, Collection<Row> rows) {
-    if (rows.isEmpty()) {
-      return;
-    }
-
-    Connection conn = getConnection();
-    PreparedStatement statement = null;
-    String query = "";
-    try {
-      query = getFirst(rows, null).getUpdateStatement(databaseType, schema, table);
-      log(query);
-
-      statement = conn.prepareStatement(query);
-      for (Row row : rows) {
-        int c = 1;
-        for (Entry<String, Object> e : row.map.entrySet()) {
-          if (e.getKey().equals("id")) {
-            continue;
-          }
-          statement.setObject(c++, convert(e.getValue()));
-        }
-        statement.setObject(c++, convert(row.map.get("id")));
-        statement.addBatch();
-      }
-      statement.executeBatch();
-    } catch (Exception e) {
-      System.err.println("query: " + query);
-      throw propagate(e);
-    } finally {
-      close(statement);
-      close(conn);
-    }
+    new RowUpdater().update(this, table, rows);
   }
 
   public long getCount(String countQuery, Object... args) {
@@ -740,29 +409,10 @@ public class DB {
     return ret;
   }
 
-  public boolean hasTable(String table) {
-    if (databaseType == DatabaseType.POSTGRES) {
-      return null != selectSingleRow("SELECT table_name"
-          + " FROM INFORMATION_SCHEMA.tables WHERE table_catalog = ? AND table_name = ? LIMIT 1",
-          schema, table);
-    } else {
-      return null != selectSingleRow("SELECT `COLUMN_NAME`"
-          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
-          schema, table);
-    }
-  }
 
-  public boolean hasColumn(String table, String column) {
-    if (databaseType == DatabaseType.POSTGRES) {
-      return null != selectSingleRow("SELECT column_name"
-          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_catalog = ? AND table_name = ? AND column_name = ? LIMIT 1",
-          schema, table, column);
-    } else {
-      return null != selectSingleRow("SELECT `COLUMN_NAME`"
-          + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
-          schema, table, column);
-    }
-  }
+  public abstract boolean hasTable(String table);
+
+  public abstract boolean hasColumn(String table, String column);
 
   public XSet<String> getTables() {
     return getTables(false);
@@ -873,18 +523,7 @@ public class DB {
     addIndex(table, columns, unique, Joiner.on("_").join(columns));
   }
 
-  protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
-    List<String> cols = map(columns, s -> databaseType.escape(s));
-    if (isPostgres()) {
-      String s = unique ? "UNIQUE " : "";
-
-      execute("CREATE " + s + "INDEX " + databaseType.escape(indexName) + " ON " + databaseType.escape(table) + " ("
-          + Joiner.on(',').join(cols) + ")");
-    } else {
-      String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
-      execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");
-    }
-  }
+  protected abstract void addIndex(String table, Collection<String> columns, boolean unique, String indexName);
 
   /**
    * Whether the table has an index of the given name. Only recommended use is single-column indices, in which case the
@@ -901,7 +540,7 @@ public class DB {
   }
 
   public void deleteTable(String table) {
-    execute("DROP TABLE " + databaseType.escape(schema) + "." + databaseType.escape(table));
+    execute("DROP TABLE " + escape(schema) + "." + escape(table));
   }
 
   public void deleteTables(XList<String> tables) {
@@ -981,7 +620,7 @@ public class DB {
     }
   }
 
-  private void close(Connection c) {
+  protected void close(Connection c) {
     if (transactionConnections.get() != null) {
       // we're in a transaction, so don't close the connection.
       return;
@@ -1002,7 +641,7 @@ public class DB {
     }
   }
 
-  private void close(Statement statement) {
+  void close(Statement statement) {
     if (statement == null) {
       return;
     }
@@ -1013,7 +652,7 @@ public class DB {
     }
   }
 
-  private void close(ResultSet results) {
+  void close(ResultSet results) {
     if (results != null) {
       try {
         results.close();
@@ -1093,7 +732,7 @@ public class DB {
     }
   }
 
-  private void log(String query, Object... args) {
+  void log(String query, Object... args) {
     log(query, null, args);
   }
 
@@ -1139,63 +778,6 @@ public class DB {
       data.print();
     } finally {
       threadDebuggingData.set(null);
-    }
-  }
-
-  // private boolean isMySql() {
-  // return databaseType == DatabaseType.MYSQL;
-  // }
-
-  private boolean isPostgres() {
-    return databaseType == DatabaseType.POSTGRES;
-  }
-
-  public static enum IsolationLevel {
-    READ_UNCOMMITTED(1),
-    READ_COMMITTED(2),
-    REPEATABLE_READ(4),
-    SERIALIZABLE(8);
-
-    public final int level;
-
-    private IsolationLevel(int level) {
-      this.level = level;
-    }
-  }
-
-  public static interface RollbackException {
-
-    /**
-     * Gets whether this Exception should trigger a rollback.
-     */
-    public default boolean shouldRollback() {
-      return true;
-    }
-
-  }
-
-  public static enum DatabaseType {
-    MYSQL('`'), POSTGRES('"');
-
-    private final char escapeChar;
-
-    private DatabaseType(char escapeChar) {
-      this.escapeChar = escapeChar;
-
-    }
-
-    public String escape(String s) {
-      return escapeChar + s + escapeChar;
-    }
-  }
-
-  public static class ReplaceOptions {
-    public final String uniqueIndex;
-    public final XSet<String> columnsToIgnore;
-
-    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore) {
-      this.uniqueIndex = normalize(uniqueIndex);
-      this.columnsToIgnore = checkNotNull(columnsToIgnore);
     }
   }
 

@@ -3,8 +3,8 @@ package ez.helper;
 import static com.google.common.base.Preconditions.checkState;
 
 import ez.DB;
-import ez.DB.DatabaseType;
 import ez.Table;
+import ez.misc.DatabaseType;
 
 import ox.Log;
 

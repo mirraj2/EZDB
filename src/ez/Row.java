@@ -12,7 +12,7 @@ import java.util.UUID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
-import ez.DB.DatabaseType;
+import ez.misc.DatabaseType;
 
 import ox.Json;
 import ox.Money;
