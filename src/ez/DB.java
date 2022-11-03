@@ -409,32 +409,15 @@ public abstract class DB {
     return ret;
   }
 
-
   public abstract boolean hasTable(String table);
 
   public abstract boolean hasColumn(String table, String column);
 
-  public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    if (databaseType == DatabaseType.POSTGRES) {
+  public abstract boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable,
+      String foreignColumn);
 
-      return false;
-    } else {
-      return null != selectSingleRow("SELECT `COLUMN_NAME`"
-          + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
-          schema, sourceTable, sourceColumn, foreignTable, foreignColumn);
-    }
-  }
-
-  public String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    if (databaseType == DatabaseType.POSTGRES) {
-
-      return "";
-    } else {
-      return selectSingleRow("SELECT `CONSTRAINT_NAME`"
-          + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
-          sourceTable, sourceColumn, foreignTable, foreignColumn).get("CONSTRAINT_NAME");
-    }
-  }
+  public abstract String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable,
+      String foreignColumn);
 
   public XSet<String> getTables() {
     return getTables(false);

@@ -1,5 +1,7 @@
 package ez.helper;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class ForeignKeyBuilder {
 
   protected String constraintName, sourceTable, sourceColumnName, foreignTable, foreignColumnName;
@@ -29,10 +31,10 @@ public class ForeignKeyBuilder {
   }
 
   public ForeignKeyConstraint build() {
-
     if (constraintName.isEmpty()) {
       return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName);
     } else {
+      checkState(constraintName.length() < 64, "The constraint name is too longer than 64 characters");
       return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName, constraintName);
     }
   }

@@ -1,7 +1,7 @@
 package ez.helper;
 
 import ez.DB;
-import ez.DB.DatabaseType;
+import ez.misc.DatabaseType;
 
 import ox.Log;
 
@@ -9,7 +9,7 @@ public class ForeignKeyConstraint {
 
   protected String foreigKeyName, sourceTable, sourceColumnName, foreignTable, foreignColumnName;
 
-  public ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
+  protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName) {
     this.sourceTable = sourceTable;
     this.sourceColumnName = sourceColumnName;
@@ -17,7 +17,7 @@ public class ForeignKeyConstraint {
     this.foreignColumnName = foreignColumnName;
   }
 
-  public ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
+  protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName, String foreignKeyName) {
     this.sourceTable = sourceTable;
     this.sourceColumnName = sourceColumnName;
