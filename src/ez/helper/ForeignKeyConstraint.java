@@ -38,7 +38,6 @@ public class ForeignKeyConstraint {
     StringBuilder sb = new StringBuilder("ALTER TABLE ");
     sb.append(databaseType.escape(sourceTable)).append(" ADD");
     sb.append(getCreationStatement(databaseType));
-    Log.debug(sb.toString());
     db.execute(sb.toString());
   }
 

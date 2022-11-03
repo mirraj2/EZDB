@@ -27,7 +27,6 @@ import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
 import ox.Json;
-import ox.Log;
 import ox.Money;
 import ox.Percent;
 import ox.Reflection;
@@ -236,7 +235,6 @@ public class Table {
         s += CASE_INSENSITIVE_COLLATION;
       }
       s += ";";
-      Log.debug(s);
       return s;
     } else {
       String s = "CREATE TABLE " + databaseType.escape(name) + " (\n";
@@ -246,7 +244,6 @@ public class Table {
       s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
       s += ");\n";
-      Log.debug(s);
       return s;
     }
   }
