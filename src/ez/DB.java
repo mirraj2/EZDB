@@ -415,15 +415,25 @@ public abstract class DB {
   public abstract boolean hasColumn(String table, String column);
 
   public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    return null != selectSingleRow("SELECT `COLUMN_NAME`"
-        + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
-        sourceTable, sourceColumn, foreignTable, foreignColumn);
+    if (databaseType == DatabaseType.POSTGRES) {
+
+      return false;
+    } else {
+      return null != selectSingleRow("SELECT `COLUMN_NAME`"
+          + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+          schema, sourceTable, sourceColumn, foreignTable, foreignColumn);
+    }
   }
 
   public String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    return selectSingleRow("SELECT `CONSTRAINT_NAME`"
-        + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
-        sourceTable, sourceColumn, foreignTable, foreignColumn).get("CONSTRAINT_NAME");
+    if (databaseType == DatabaseType.POSTGRES) {
+
+      return "";
+    } else {
+      return selectSingleRow("SELECT `CONSTRAINT_NAME`"
+          + " FROM INFORMATION_SCEHMA.KEY_COLUMN_USAGE WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+          sourceTable, sourceColumn, foreignTable, foreignColumn).get("CONSTRAINT_NAME");
+    }
   }
 
   public XSet<String> getTables() {
@@ -607,7 +617,7 @@ public abstract class DB {
   }
 
   public void removeForeignKey(String table, String foreignKeyName) {
-    execute("ALTER TABLE `" + table + "` DROP FOREIGN KEY " + foreignKeyName);
+    execute("ALTER TABLE " + databaseType.escape(table) + " DROP CONSTRAINT " + foreignKeyName);
   }
 
   public void removeForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {

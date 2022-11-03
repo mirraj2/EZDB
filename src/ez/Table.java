@@ -27,6 +27,7 @@ import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
 import ox.Json;
+import ox.Log;
 import ox.Money;
 import ox.Percent;
 import ox.Reflection;
@@ -225,10 +226,7 @@ public class Table {
         s = s.substring(0, s.length() - 1);
         s += "),\n";
       }
-      for (ForeignKeyConstraint fk : foreignKeyConstraints) {
-        s += fk.getCreationStatement();
-        s += ",\n";
-      }
+      s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
       s += ")\n";
       s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
@@ -238,16 +236,28 @@ public class Table {
         s += CASE_INSENSITIVE_COLLATION;
       }
       s += ";";
+      Log.debug(s);
       return s;
     } else {
       String s = "CREATE TABLE " + databaseType.escape(name) + " (\n";
       for (Entry<String, String> e : columns.entrySet()) {
         s += databaseType.escape(e.getKey()) + " " + e.getValue() + ",\n";
       }
+      s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
       s += ");\n";
+      Log.debug(s);
       return s;
     }
+  }
+
+  private String createForeignKeys() {
+    String s = "";
+    for (ForeignKeyConstraint fk : foreignKeyConstraints) {
+      s += fk.getCreationStatement(databaseType);
+      s += ",\n";
+    }
+    return s;
   }
 
   public Map<String, String> getColumns() {

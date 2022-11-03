@@ -1,6 +1,7 @@
 package ez.helper;
 
 import ez.DB;
+import ez.DB.DatabaseType;
 
 import ox.Log;
 
@@ -32,21 +33,25 @@ public class ForeignKeyConstraint {
       return;
     }
 
-    StringBuilder sb = new StringBuilder("ALTER TABLE `");
-    sb.append(sourceTable).append("` ADD");
-    sb.append(getCreationStatement());
+    DatabaseType databaseType = db.databaseType;
+
+    StringBuilder sb = new StringBuilder("ALTER TABLE ");
+    sb.append(databaseType.escape(sourceTable)).append(" ADD");
+    sb.append(getCreationStatement(databaseType));
+    Log.debug(sb.toString());
     db.execute(sb.toString());
   }
 
-  public String getCreationStatement() {
+  public String getCreationStatement(DatabaseType databaseType) {
     StringBuilder sb = new StringBuilder();
 
     if (!foreigKeyName.isEmpty()) {
       sb.append(" CONSTRAINT ").append(foreigKeyName);
     }
 
-    sb.append(" FOREIGN KEY (`").append(sourceColumnName).append("`) REFERENCES `").append(foreignTable).append("`(`")
-        .append(foreignColumnName).append("`)");
+    sb.append(" FOREIGN KEY (").append(databaseType.escape(sourceColumnName)).append(") REFERENCES ")
+        .append(databaseType.escape(foreignTable)).append("(")
+        .append(databaseType.escape(foreignColumnName)).append(")");
 
     return sb.toString();
   }
