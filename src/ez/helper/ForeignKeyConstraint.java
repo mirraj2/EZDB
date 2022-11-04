@@ -1,5 +1,7 @@
 package ez.helper;
 
+import com.google.common.base.Strings;
+
 import ez.DB;
 import ez.misc.DatabaseType;
 
@@ -44,7 +46,7 @@ public class ForeignKeyConstraint {
   public String getCreationStatement(DatabaseType databaseType) {
     StringBuilder sb = new StringBuilder();
 
-    if (!foreigKeyName.isEmpty()) {
+    if (!Strings.isNullOrEmpty(foreigKeyName)) {
       sb.append(" CONSTRAINT ").append(foreigKeyName);
     }
 
