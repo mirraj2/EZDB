@@ -544,6 +544,9 @@ public abstract class DB {
   }
 
   public void deleteTables(XList<String> tables) {
+    if(tables.isEmpty()) {
+      return;
+    }
     execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + schema + "`.`" + table + "`")));
   }
 
