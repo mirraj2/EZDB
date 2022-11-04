@@ -55,7 +55,7 @@ public class Table {
   private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
 
-  private final List<ForeignKeyConstraint> foreignKeyConstraints = Lists.newArrayList();
+  private final Set<ForeignKeyConstraint> foreignKeyConstraints = Sets.newHashSet();
 
   protected String lastColumnAdded = "";
 
