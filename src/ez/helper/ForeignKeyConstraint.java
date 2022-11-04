@@ -1,5 +1,8 @@
 package ez.helper;
 
+import static ox.util.Utils.checkNotEmpty;
+import static ox.util.Utils.normalize;
+
 import com.google.common.base.Strings;
 
 import ez.DB;
@@ -13,19 +16,16 @@ public class ForeignKeyConstraint {
 
   protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName) {
-    this.sourceTable = sourceTable;
-    this.sourceColumnName = sourceColumnName;
-    this.foreignTable = foreignTable;
-    this.foreignColumnName = foreignColumnName;
+    this(sourceTable, sourceColumnName, foreignTable, foreignColumnName, null);
   }
 
   protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName, String foreignKeyName) {
-    this.sourceTable = sourceTable;
-    this.sourceColumnName = sourceColumnName;
-    this.foreignTable = foreignTable;
-    this.foreignColumnName = foreignColumnName;
-    this.foreigKeyName = foreignKeyName;
+    this.sourceTable = checkNotEmpty(normalize(sourceTable));
+    this.sourceColumnName = checkNotEmpty(normalize(sourceColumnName));
+    this.foreignTable = checkNotEmpty(normalize(foreignTable));
+    this.foreignColumnName = checkNotEmpty(normalize(foreignColumnName));
+    this.foreigKeyName = normalize(foreignKeyName);
   }
 
   public void execute(DB db) {

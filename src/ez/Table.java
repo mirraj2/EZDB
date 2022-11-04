@@ -102,19 +102,6 @@ public class Table {
     return column(name, "VARCHAR(" + n + ")");
   }
 
-  public Table linkColumn(String name, Class<?> type, String foreignTable, String foreignColumnName,
-      String foreignKeyName) {
-    columnClasses.put(name, type);
-    return linkColumn(name, getType(type), foreignTable, foreignColumnName, foreignKeyName);
-  }
-
-  public Table linkColumn(String name, String type, String foreignTable, String foreignColumnName,
-      String foreignKeyName) {
-    foreignKeyConstraints
-        .add(ForeignKeyBuilder.create(this.name, name, foreignTable, foreignColumnName, foreignKeyName));
-    return column(name, type);
-  }
-
   public Table linkColumn(String name, Class<?> type, String foreignTable, String foreignColumnName) {
     columnClasses.put(name, type);
     return linkColumn(name, getType(type), foreignTable, foreignColumnName);
