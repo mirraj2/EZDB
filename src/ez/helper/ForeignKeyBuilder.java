@@ -36,7 +36,7 @@ public class ForeignKeyBuilder {
     if (Strings.isNullOrEmpty(constraintName)) {
       return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName);
     } else {
-      checkState(constraintName.length() < 64, "The constraint name is too longer than 64 characters");
+      checkState(constraintName.length() < 64, "The constraint name cannot be longer than 64 characters");
       return new ForeignKeyConstraint(sourceTable, sourceColumnName, foreignTable, foreignColumnName, constraintName);
     }
   }
