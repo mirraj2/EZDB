@@ -30,6 +30,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import org.postgresql.util.PGobject;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
@@ -693,7 +695,8 @@ public abstract class DB {
     source.close();
   }
 
-  private static final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class);
+  private static final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class,
+      PGobject.class);
 
   public static Object convert(Object o) {
     if (o instanceof Optional) {

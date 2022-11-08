@@ -16,6 +16,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import org.postgresql.geometric.PGpoint;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -319,6 +321,7 @@ public class Table {
     postgresTypesMap.putAll(columnTypesMap);
     postgresTypesMap.put(Double.class, "double precision");
     postgresTypesMap.put(Json.class, "jsonb");
+    postgresTypesMap.put(PGpoint.class, "geometry");
   }
 
   public static void registerColumn(Class<?> columnType, String sqlType) {

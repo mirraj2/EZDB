@@ -5,6 +5,7 @@
 	<classpathentry exported="true" kind="lib" path="lib/HikariCP-2.4.7.jar" sourcepath="lib/HikariCP-2.4.7-sources.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/mysql-connector-java-5.1.46.jar"/>
 	<classpathentry kind="lib" path="lib/postgresql-42.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/postgis-java-ng-22.3.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11">
 		<attributes>
 			<attribute name="module" value="true"/>
