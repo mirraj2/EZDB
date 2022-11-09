@@ -24,6 +24,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import ez.helper.ForeignKeyBuilder;
+import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
 import ox.Json;
@@ -54,6 +56,8 @@ public class Table {
   private final List<Integer> primaryIndices = Lists.newArrayList();
   private final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
+
+  private final Set<ForeignKeyConstraint> foreignKeyConstraints = Sets.newHashSet();
 
   protected String lastColumnAdded = "";
 
@@ -98,6 +102,16 @@ public class Table {
 
   public Table varchar(String name, int n) {
     return column(name, "VARCHAR(" + n + ")");
+  }
+
+  public Table linkColumn(String name, Class<?> type, String foreignTable, String foreignColumnName) {
+    columnClasses.put(name, type);
+    return linkColumn(name, getType(type), foreignTable, foreignColumnName);
+  }
+
+  public Table linkColumn(String name, String type, String foreignTable, String foreignColumnName) {
+    foreignKeyConstraints.add(ForeignKeyBuilder.create(this.name, name, foreignTable, foreignColumnName));
+    return column(name, type);
   }
 
   /**
@@ -200,6 +214,7 @@ public class Table {
         s = s.substring(0, s.length() - 1);
         s += "),\n";
       }
+      s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
       s += ")\n";
       s += "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE ";
@@ -215,10 +230,20 @@ public class Table {
       for (Entry<String, String> e : columns.entrySet()) {
         s += databaseType.escape(e.getKey()) + " " + e.getValue() + ",\n";
       }
+      s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
       s += ");\n";
       return s;
     }
+  }
+
+  private String createForeignKeys() {
+    String s = "";
+    for (ForeignKeyConstraint fk : foreignKeyConstraints) {
+      s += fk.getCreationStatement(databaseType);
+      s += ",\n";
+    }
+    return s;
   }
 
   public Map<String, String> getColumns() {

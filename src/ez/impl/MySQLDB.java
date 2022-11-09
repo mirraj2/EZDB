@@ -90,6 +90,22 @@ public class MySQLDB extends DB {
   }
 
   @Override
+  public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    return null != selectSingleRow("SELECT `COLUMN_NAME`"
+        + " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND"
+        + " REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+        schema, sourceTable, sourceColumn, foreignTable, foreignColumn);
+  }
+
+  @Override
+  public String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    return selectSingleRow("SELECT `CONSTRAINT_NAME`"
+        + " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?"
+        + " AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
+        schema, sourceTable, sourceColumn, foreignTable, foreignColumn).get("CONSTRAINT_NAME");
+  }
+
+  @Override
   protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
     List<String> cols = map(columns, s -> escape(s));
     String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";

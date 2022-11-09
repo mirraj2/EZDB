@@ -411,10 +411,15 @@ public abstract class DB {
     return ret;
   }
 
-
   public abstract boolean hasTable(String table);
 
   public abstract boolean hasColumn(String table, String column);
+
+  public abstract boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable,
+      String foreignColumn);
+
+  public abstract String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable,
+      String foreignColumn);
 
   public XSet<String> getTables() {
     return getTables(false);
@@ -597,6 +602,14 @@ public abstract class DB {
 
   public void deleteColumns(String table, Iterable<String> columns) {
     columns.forEach(column -> deleteColumn(table, column));
+  }
+
+  public void removeForeignKey(String table, String foreignKeyName) {
+    execute("ALTER TABLE " + databaseType.escape(table) + " DROP CONSTRAINT " + foreignKeyName);
+  }
+
+  public void removeForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
+    removeForeignKey(sourceTable, getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn));
   }
 
   /**
