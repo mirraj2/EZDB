@@ -3,6 +3,7 @@ package ez;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Functions.map;
+import static ox.util.Utils.normalize;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -52,6 +53,7 @@ public class Table {
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
   private final Map<String, Class<?>> columnClasses = Maps.newLinkedHashMap();
+  private final Map<String, String> columnComments = Maps.newLinkedHashMap();
 
   private final List<Integer> primaryIndices = Lists.newArrayList();
   private final Set<String> autoConvertColumns = Sets.newHashSet();
@@ -97,6 +99,11 @@ public class Table {
     checkState(!columns.containsKey(name), "Already added column with name: " + name);
     columns.put(name, type);
     lastColumnAdded = name;
+    return this;
+  }
+
+  public Table comment(String comment) {
+    columnComments.put(lastColumnAdded, normalize(comment).replace("'", "\\'"));
     return this;
   }
 
@@ -203,7 +210,11 @@ public class Table {
     if (databaseType == DatabaseType.MYSQL) {
       String s = "CREATE TABLE `" + schema + "`.`" + name + "`(\n";
       for (Entry<String, String> e : columns.entrySet()) {
-        s += "`" + e.getKey() + "`" + " " + e.getValue() + ",\n";
+        String comment = normalize(columnComments.get(e.getKey()));
+        if (!comment.isEmpty()) {
+          comment = " COMMENT '" + comment + "'";
+        }
+        s += "`" + e.getKey() + "`" + " " + e.getValue() + comment + ",\n";
       }
       if (!primaryIndices.isEmpty()) {
         s += "PRIMARY KEY (";
