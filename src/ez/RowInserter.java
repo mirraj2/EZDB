@@ -140,7 +140,7 @@ public class RowInserter {
     return builder.append(")").toString();
   }
 
-  public void insertRawRows(DB db, String table, List<? extends Iterable<?>> rows) {
+  public void insertRawRows(DB db, String table, List<? extends Iterable<?>> rows, boolean replace) {
     if (rows.isEmpty()) {
       return;
     }
@@ -149,7 +149,8 @@ public class RowInserter {
     PreparedStatement statement = null;
 
     try {
-      StringBuilder sb = new StringBuilder("INSERT INTO `" + db.schema + "`.`" + table + "` VALUES ");
+      StringBuilder sb = new StringBuilder((replace ? "REPLACE" : "INSERT") +
+          " INTO `" + db.schema + "`.`" + table + "` VALUES ");
 
       final String placeholders = getInsertPlaceholders(Iterables.size(rows.get(0)));
       for (int i = 0; i < rows.size(); i++) {

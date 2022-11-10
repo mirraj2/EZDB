@@ -329,8 +329,8 @@ public abstract class DB {
     return null;
   }
 
-  public void insertRawRows(String table, List<? extends Iterable<?>> rows) {
-    new RowInserter().insertRawRows(this, table, rows);
+  public void insertRawRows(String table, List<? extends Iterable<?>> rows, boolean replace) {
+    new RowInserter().insertRawRows(this, table, rows, replace);
   }
 
   public void replace(Table table, Row row) {
