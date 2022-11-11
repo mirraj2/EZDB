@@ -1,12 +1,15 @@
 package ez;
 
 import static com.google.common.collect.Iterables.getFirst;
+import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.propagate;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.Map.Entry;
+
+import ox.Log;
 
 public class RowUpdater {
 
@@ -23,7 +26,7 @@ public class RowUpdater {
       }
       return statement.executeUpdate();
     } catch (Exception e) {
-      System.err.println("query: " + query);
+      Log.error("query: " + abbreviate(query, 1024));
       throw propagate(e);
     } finally {
       db.close(statement);
