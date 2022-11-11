@@ -755,7 +755,7 @@ public abstract class DB {
     log(query, null, args);
   }
 
-  private void log(String query, Stopwatch watch, Object... args) {
+  void log(String query, Stopwatch watch, Object... args) {
     DebuggingData data = threadDebuggingData.get();
     if (data != null) {
       data.store(query, XList.of(args), watch == null ? null : watch.elapsed());
