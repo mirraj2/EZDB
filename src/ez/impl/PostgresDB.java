@@ -3,13 +3,14 @@ package ez.impl;
 import static ox.util.Functions.map;
 import static ox.util.Utils.format;
 
-import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Joiner;
 
 import ez.DB;
 import ez.misc.DatabaseType;
+
+import ox.x.XList;
 
 public class PostgresDB extends DB {
 
@@ -86,7 +87,7 @@ public class PostgresDB extends DB {
   }
 
   @Override
-  protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
+  public void addIndex(String table, XList<String> columns, boolean unique, String indexName) {
     List<String> cols = map(columns, s -> escape(s));
     String s = unique ? "UNIQUE " : "";
 

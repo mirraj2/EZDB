@@ -1,6 +1,7 @@
 package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
@@ -523,14 +524,20 @@ public abstract class DB {
   }
 
   public void addIndex(String table, String column, boolean unique) {
-    addIndex(table, ImmutableList.of(column), unique);
+    addIndex(table, XList.of(column), unique);
   }
 
-  public void addIndex(String table, Collection<String> columns, boolean unique) {
-    addIndex(table, columns, unique, Joiner.on("_").join(columns));
+  public void addIndex(String table, XList<String> columns, boolean unique) {
+    String indexName = Joiner.on("_").join(columns);
+    if (indexName.length() > 64) {
+      int maxKeyLength = (64 - columns.size() - 1) / columns.size();
+      checkState(maxKeyLength > 0);
+      indexName = Joiner.on("_").join(columns.map(c -> c.length() > maxKeyLength ? c.substring(0, maxKeyLength) : c));
+    }
+    addIndex(table, columns, unique, indexName);
   }
 
-  protected abstract void addIndex(String table, Collection<String> columns, boolean unique, String indexName);
+  public abstract void addIndex(String table, XList<String> columns, boolean unique, String indexName);
 
   /**
    * Whether the table has an index of the given name. Only recommended use is single-column indices, in which case the

@@ -7,7 +7,6 @@ import static ox.util.Utils.normalize;
 import static ox.util.Utils.propagate;
 
 import java.sql.Connection;
-import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Joiner;
@@ -16,6 +15,7 @@ import ez.DB;
 import ez.misc.DatabaseType;
 
 import ox.Log;
+import ox.x.XList;
 
 public class MySQLDB extends DB {
 
@@ -106,7 +106,7 @@ public class MySQLDB extends DB {
   }
 
   @Override
-  protected void addIndex(String table, Collection<String> columns, boolean unique, String indexName) {
+  public void addIndex(String table, XList<String> columns, boolean unique, String indexName) {
     List<String> cols = map(columns, s -> escape(s));
     String s = unique ? "ADD UNIQUE INDEX" : "ADD INDEX";
     execute("ALTER TABLE `" + table + "` " + s + " `" + indexName + "` (" + Joiner.on(",").join(cols) + ")");

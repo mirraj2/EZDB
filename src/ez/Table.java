@@ -19,7 +19,6 @@ import java.util.UUID;
 
 import org.postgresql.geometric.PGpoint;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -146,7 +145,7 @@ public class Table {
   }
 
   public Table index(String... columns) {
-    indices.add(new Index(ImmutableList.copyOf(columns), false));
+    indices.add(new Index(XList.of(columns), false));
     return this;
   }
 
@@ -162,7 +161,7 @@ public class Table {
   }
 
   public Table uniqueIndex(String... columns) {
-    indices.add(new Index(ImmutableList.copyOf(columns), true));
+    indices.add(new Index(XList.of(columns), true));
     return this;
   }
 
@@ -325,10 +324,10 @@ public class Table {
   }
 
   public static class Index {
-    public final List<String> columns;
+    public final XList<String> columns;
     public final boolean unique;
 
-    public Index(List<String> columns, boolean unique) {
+    public Index(XList<String> columns, boolean unique) {
       this.columns = columns;
       this.unique = unique;
     }
