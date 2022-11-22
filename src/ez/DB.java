@@ -197,6 +197,20 @@ public abstract class DB {
     return this;
   }
 
+  /**
+   * Runs the runnable with foreign key constraints disabled. This differs from `disableForeignKeyChecks` which disables
+   * the constraints for the next connection on the current thread.
+   */
+  public DB runDisablingForeignKeyChecks(Runnable r) {
+    try {
+      execute(disableReferentialConstraints());
+      r.run();
+      return this;
+    } finally {
+      execute(enableReferentialConstraints());
+    }
+  }
+
   public DB transaction(Runnable r) {
     return transaction(r, IsolationLevel.SERIALIZABLE);
   }
@@ -566,7 +580,7 @@ public abstract class DB {
   }
 
   public void deleteTables(XList<String> tables) {
-    if(tables.isEmpty()) {
+    if (tables.isEmpty()) {
       return;
     }
     execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + schema + "`.`" + table + "`")));
@@ -665,7 +679,7 @@ public abstract class DB {
       if (normalize(disableForeignKeyChecks.get())) {
         try {
           Statement s = c.createStatement();
-          s.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
+          s.executeUpdate(enableReferentialConstraints());
           close(s);
         } catch (Exception e) {
           throw propagate(e);
@@ -686,6 +700,14 @@ public abstract class DB {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  public String disableReferentialConstraints() {
+    return "SET FOREIGN_KEY_CHECKS = 0";
+  }
+
+  public String enableReferentialConstraints() {
+    return "SET FOREIGN_KEY_CHECKS = 1";
   }
 
   void close(ResultSet results) {
@@ -710,7 +732,7 @@ public abstract class DB {
     if (normalize(disableForeignKeyChecks.get())) {
       try {
         Statement s = ret.createStatement();
-        s.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+        s.executeUpdate(disableReferentialConstraints());
         close(s);
       } catch (Exception e) {
         throw propagate(e);
