@@ -55,7 +55,12 @@ public class Row implements Iterable<String> {
   }
 
   public Double getDouble(String key) {
-    return (Double) map.get(key);
+    Object ret = map.get(key);
+    if (ret instanceof Double || ret == null) {
+      return (Double) ret;
+    } else {
+      return ((Number) ret).doubleValue();
+    }
   }
 
   public Boolean getBoolean(String key) {

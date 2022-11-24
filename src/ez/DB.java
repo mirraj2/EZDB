@@ -141,6 +141,7 @@ public abstract class DB {
       // url += "&useLegacyDatetimeCode=false";
       // url += "&serverTimezone=UTC";
       url += "&characterEncoding=utf8";
+      url += "&zeroDateTimeBehavior=convertToNull";
     } else if (databaseType == DatabaseType.POSTGRES) {
       // url += "?adaptiveFetch=true&defaultRowFetchSize=64&maxResultBuffer=128M";
     }
