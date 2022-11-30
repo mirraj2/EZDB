@@ -45,6 +45,7 @@ import com.zaxxer.hikari.pool.HikariPool;
 import ez.RowInserter.ReplaceOptions;
 import ez.Table.Index;
 import ez.helper.DebuggingData;
+import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 import ez.misc.IsolationLevel;
 import ez.misc.RollbackException;
@@ -417,8 +418,14 @@ public abstract class DB {
 
   public abstract boolean hasColumn(String table, String column);
 
-  public abstract boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable,
-      String foreignColumn);
+  public void addForeignKey(ForeignKeyConstraint constraint) {
+    constraint.execute(this);
+  }
+
+  public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable,
+      String foreignColumn) {
+    return !getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn).isEmpty();
+  }
 
   public abstract String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable,
       String foreignColumn);
@@ -617,7 +624,10 @@ public abstract class DB {
   }
 
   public void removeForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    removeForeignKey(sourceTable, getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn));
+    String foreignKeyName = getForeignKeyName(sourceTable, sourceColumn, foreignTable, foreignColumn);
+    if (!foreignKeyName.isEmpty()) {
+      removeForeignKey(sourceTable, foreignKeyName);
+    }
   }
 
   /**

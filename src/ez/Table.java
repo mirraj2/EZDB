@@ -24,7 +24,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import ez.helper.ForeignKeyBuilder;
 import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
@@ -116,7 +115,7 @@ public class Table {
   }
 
   public Table linkColumn(String name, String type, String foreignTable, String foreignColumnName) {
-    foreignKeyConstraints.add(ForeignKeyBuilder.create(this.name, name, foreignTable, foreignColumnName));
+    foreignKeyConstraints.add(new ForeignKeyConstraint(this.name, name, foreignTable, foreignColumnName));
     return column(name, type);
   }
 

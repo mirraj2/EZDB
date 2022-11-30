@@ -57,21 +57,6 @@ public class PostgresDB extends DB {
   }
 
   @Override
-  public boolean hasForeignKey(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
-    return null != selectSingleRow("SELECT tc.table_name FROM "
-        + "information_schema.table_constraints AS tc "
-        + "JOIN information_schema.key_column_usage AS kcu "
-        + "ON tc.constraint_name = kcu.constraint_name "
-        + "AND tc.table_schema = kcu.table_schema "
-        + "JOIN information_schema.constraint_column_usage AS ccu "
-        + "ON ccu.constraint_name = tc.constraint_name "
-        + "AND ccu.table_schema = tc.table_schema "
-        + "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = ? AND tc.table_name = ? AND kcu.column_name = ? "
-        + "AND ccu.table_name = ? AND ccu.column_name = ? LIMIT 1", schema, sourceTable, sourceColumn, foreignTable,
-        foreignColumn);
-  }
-
-  @Override
   public String getForeignKeyName(String sourceTable, String sourceColumn, String foreignTable, String foreignColumn) {
     return selectSingleRow("SELECT tc.constraint_name FROM "
         + "information_schema.table_constraints AS tc "

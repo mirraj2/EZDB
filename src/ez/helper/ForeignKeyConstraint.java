@@ -3,56 +3,54 @@ package ez.helper;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.normalize;
 
-import com.google.common.base.Strings;
-
 import ez.DB;
 import ez.misc.DatabaseType;
 
-import ox.Log;
-
 public class ForeignKeyConstraint {
 
-  protected String foreigKeyName, sourceTable, sourceColumnName, foreignTable, foreignColumnName;
+  public String sourceTable, sourceColumn, foreignTable, foreignColumn;
+  public String foreignKeyName = "";
+  public boolean cascade = false;
 
-  protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
+  public ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
       String foreignColumnName) {
-    this(sourceTable, sourceColumnName, foreignTable, foreignColumnName, null);
+    this.sourceTable = checkNotEmpty(normalize(sourceTable));
+    this.sourceColumn = checkNotEmpty(normalize(sourceColumnName));
+    this.foreignTable = checkNotEmpty(normalize(foreignTable));
+    this.foreignColumn = checkNotEmpty(normalize(foreignColumnName));
   }
 
-  protected ForeignKeyConstraint(String sourceTable, String sourceColumnName, String foreignTable,
-      String foreignColumnName, String foreignKeyName) {
-    this.sourceTable = checkNotEmpty(normalize(sourceTable));
-    this.sourceColumnName = checkNotEmpty(normalize(sourceColumnName));
-    this.foreignTable = checkNotEmpty(normalize(foreignTable));
-    this.foreignColumnName = checkNotEmpty(normalize(foreignColumnName));
-    this.foreigKeyName = normalize(foreignKeyName);
+  public ForeignKeyConstraint onDeleteCascade() {
+    cascade = true;
+    return this;
   }
 
   public void execute(DB db) {
-    if (db.hasForeignKey(sourceTable, sourceColumnName, foreignTable, foreignColumnName)) {
-      Log.warn("Foreign Key for " + sourceTable + "." + sourceColumnName + " referencing " + foreignTable + "."
-          + foreignColumnName + " already exists.");
-      return;
-    }
+    // make sure this constraint is deleted if it already exists.
+    db.removeForeignKey(sourceTable, sourceColumn, foreignTable, foreignColumn);
 
-    DatabaseType databaseType = db.databaseType;
+    DatabaseType type = db.databaseType;
 
     StringBuilder sb = new StringBuilder("ALTER TABLE ");
-    sb.append(databaseType.escape(sourceTable)).append(" ADD");
-    sb.append(getCreationStatement(databaseType));
+    sb.append(type.escape(sourceTable)).append(" ADD");
+    sb.append(getCreationStatement(type));
     db.execute(sb.toString());
   }
 
-  public String getCreationStatement(DatabaseType databaseType) {
+  public String getCreationStatement(DatabaseType type) {
     StringBuilder sb = new StringBuilder();
 
-    if (!Strings.isNullOrEmpty(foreigKeyName)) {
-      sb.append(" CONSTRAINT ").append(foreigKeyName);
+    if (!foreignKeyName.isEmpty()) {
+      sb.append(" CONSTRAINT ").append(foreignKeyName);
     }
 
-    sb.append(" FOREIGN KEY (").append(databaseType.escape(sourceColumnName)).append(") REFERENCES ")
-        .append(databaseType.escape(foreignTable)).append("(")
-        .append(databaseType.escape(foreignColumnName)).append(")");
+    sb.append(" FOREIGN KEY (").append(type.escape(sourceColumn)).append(") REFERENCES ")
+        .append(type.escape(foreignTable)).append("(")
+        .append(type.escape(foreignColumn)).append(")");
+
+    if (cascade) {
+      sb.append("\n ON DELETE CASCADE");
+    }
 
     return sb.toString();
   }
