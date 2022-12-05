@@ -663,13 +663,7 @@ public abstract class DB {
     }
     try {
       if (normalize(disableForeignKeyChecks.get())) {
-        try {
-          Statement s = c.createStatement();
-          s.executeUpdate(enableReferentialConstraints());
-          close(s);
-        } catch (Exception e) {
-          throw propagate(e);
-        }
+        enableReferentialConstraints(c);
       }
       c.close();
     } catch (Exception e) {
@@ -688,12 +682,24 @@ public abstract class DB {
     }
   }
 
-  public String disableReferentialConstraints() {
-    return "SET FOREIGN_KEY_CHECKS = 0";
+  protected void disableReferentialConstraints(Connection c) {
+    try {
+      Statement s = c.createStatement();
+      s.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+      close(s);
+    } catch (Exception e) {
+      throw propagate(e);
+    }
   }
 
-  public String enableReferentialConstraints() {
-    return "SET FOREIGN_KEY_CHECKS = 1";
+  protected void enableReferentialConstraints(Connection c) {
+    try {
+      Statement s = c.createStatement();
+      s.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
+      close(s);
+    } catch (Exception e) {
+      throw propagate(e);
+    }
   }
 
   void close(ResultSet results) {
@@ -716,13 +722,7 @@ public abstract class DB {
       }
     }
     if (normalize(disableForeignKeyChecks.get())) {
-      try {
-        Statement s = ret.createStatement();
-        s.executeUpdate(disableReferentialConstraints());
-        close(s);
-      } catch (Exception e) {
-        throw propagate(e);
-      }
+      disableReferentialConstraints(ret);
     }
     return ret;
   }
