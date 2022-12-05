@@ -73,7 +73,7 @@ public abstract class DB {
 
   protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
-  private final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
+  protected final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
   public final DatabaseType databaseType;
   public final String host, user, pass;
@@ -195,20 +195,6 @@ public abstract class DB {
       disableForeignKeyChecks.set(false);
     }
     return this;
-  }
-
-  /**
-   * Runs the runnable with foreign key constraints disabled. This differs from `disableForeignKeyChecks` which disables
-   * the constraints for the next connection on the current thread.
-   */
-  public DB runDisablingForeignKeyChecks(Runnable r) {
-    try {
-      execute(disableReferentialConstraints());
-      r.run();
-      return this;
-    } finally {
-      execute(enableReferentialConstraints());
-    }
   }
 
   public DB transaction(Runnable r) {
@@ -691,7 +677,7 @@ public abstract class DB {
     }
   }
 
-  void close(Statement statement) {
+  protected void close(Statement statement) {
     if (statement == null) {
       return;
     }
