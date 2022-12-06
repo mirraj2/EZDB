@@ -73,7 +73,7 @@ public abstract class DB {
 
   protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
-  private final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
+  protected final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
   public final DatabaseType databaseType;
   public final String host, user, pass;
@@ -566,7 +566,7 @@ public abstract class DB {
   }
 
   public void deleteTables(XList<String> tables) {
-    if(tables.isEmpty()) {
+    if (tables.isEmpty()) {
       return;
     }
     execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + schema + "`.`" + table + "`")));
@@ -663,13 +663,7 @@ public abstract class DB {
     }
     try {
       if (normalize(disableForeignKeyChecks.get())) {
-        try {
-          Statement s = c.createStatement();
-          s.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
-          close(s);
-        } catch (Exception e) {
-          throw propagate(e);
-        }
+        enableReferentialConstraints(c);
       }
       c.close();
     } catch (Exception e) {
@@ -677,7 +671,7 @@ public abstract class DB {
     }
   }
 
-  void close(Statement statement) {
+  protected void close(Statement statement) {
     if (statement == null) {
       return;
     }
@@ -685,6 +679,26 @@ public abstract class DB {
       statement.close();
     } catch (Exception e) {
       e.printStackTrace();
+    }
+  }
+
+  protected void disableReferentialConstraints(Connection c) {
+    try {
+      Statement s = c.createStatement();
+      s.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
+      close(s);
+    } catch (Exception e) {
+      throw propagate(e);
+    }
+  }
+
+  protected void enableReferentialConstraints(Connection c) {
+    try {
+      Statement s = c.createStatement();
+      s.executeUpdate("SET FOREIGN_KEY_CHECKS = 1");
+      close(s);
+    } catch (Exception e) {
+      throw propagate(e);
     }
   }
 
@@ -708,13 +722,7 @@ public abstract class DB {
       }
     }
     if (normalize(disableForeignKeyChecks.get())) {
-      try {
-        Statement s = ret.createStatement();
-        s.executeUpdate("SET FOREIGN_KEY_CHECKS = 0");
-        close(s);
-      } catch (Exception e) {
-        throw propagate(e);
-      }
+      disableReferentialConstraints(ret);
     }
     return ret;
   }
