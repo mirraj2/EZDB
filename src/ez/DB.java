@@ -718,7 +718,7 @@ public abstract class DB {
       try {
         ret = source.getConnection();
       } catch (Exception e) {
-        throw propagate(e);
+        throw new RuntimeException("Problem connecting to " + host, e);
       }
     }
     if (normalize(disableForeignKeyChecks.get())) {
