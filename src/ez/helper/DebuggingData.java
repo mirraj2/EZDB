@@ -54,7 +54,8 @@ public class DebuggingData {
   }
 
   private int countDuplicates(XList<Query> queries) {
-    return queries.toSet(q -> q.args).size();
+    int uniques = queries.toSet(q -> q.args).size();
+    return queries.size() - uniques;
   }
 
   private static class Query {
@@ -66,6 +67,11 @@ public class DebuggingData {
       this.sqlQuery = normalize(sqlQuery);
       this.args = args;
       this.elapsed = elapsed;
+    }
+
+    @Override
+    public String toString() {
+      return args.toString();
     }
   }
 
