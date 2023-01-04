@@ -101,7 +101,11 @@ public class Table {
   }
 
   public Table comment(String comment) {
-    columnComments.put(lastColumnAdded, normalize(comment).replace("'", "\\'"));
+    return comment(lastColumnAdded, comment);
+  }
+
+  public Table comment(String columnName, String comment) {
+    columnComments.put(columnName, normalize(comment).replace("'", "\\'"));
     return this;
   }
 
