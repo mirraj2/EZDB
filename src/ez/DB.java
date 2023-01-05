@@ -294,7 +294,7 @@ public abstract class DB {
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
-    stream(query, XOptional.empty(), true, callback, args);
+    stream(query, 32, callback, args);
   }
 
   public void stream(String query, int fetchSize, Consumer<Row> callback, Object... args) {

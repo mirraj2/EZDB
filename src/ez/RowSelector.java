@@ -16,6 +16,7 @@ import org.postgresql.util.PGobject;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 
+import ez.impl.MySQLDB;
 import ez.impl.PostgresDB;
 
 import ox.Json;
@@ -34,8 +35,14 @@ public class RowSelector {
       statement = conn.prepareStatement(query);
 
       if (db instanceof PostgresDB) {
-        // these two lines enable streaming of results
+        // postgres fetchsize doesn't work without this line
         conn.setAutoCommit(false);
+      } else if (db instanceof MySQLDB) {
+        if (fetchSize.isPresent()) {
+          // mysql doesn't respect the fetchsize, but setting to MIN_VALUE will cause it to stream results
+          statement.setFetchSize(Integer.MIN_VALUE);
+        }
+      } else {
         statement.setFetchSize(fetchSize.orElse(10_000));
       }
 
