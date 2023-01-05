@@ -24,7 +24,6 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -37,7 +36,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.pool.HikariPool;
@@ -56,6 +54,7 @@ import ox.Money;
 import ox.Percent;
 import ox.Reflection;
 import ox.x.XList;
+import ox.x.XMap;
 import ox.x.XOptional;
 import ox.x.XSet;
 
@@ -508,13 +507,16 @@ public abstract class DB {
     execute(s);
   }
 
-  public Map<String, String> getColumns(String table) {
+  /**
+   * @return map from column name to type.
+   */
+  public XMap<String, String> getColumns(String table) {
     List<Row> rows = select("SELECT `COLUMN_NAME` as `name`, `DATA_TYPE` as `type`,"
         + " `CHARACTER_MAXIMUM_LENGTH` as `len`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ?",
         schema, table);
 
-    Map<String, String> ret = Maps.newLinkedHashMap();
+    XMap<String, String> ret = XMap.create();
     for (Row row : rows) {
       Object o = row.getObject("type");
       String type = o instanceof String ? (String) o : new String((byte[]) o);

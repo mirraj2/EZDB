@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 
 import ez.DB;
 import ez.Row;
@@ -43,7 +44,7 @@ public class MySQLDB extends DB {
       connection = getConnection();
       close(connection);
     } catch (Exception e) {
-      if (!e.getMessage().contains("Unknown database")) {
+      if (!Throwables.getRootCause(e).getMessage().contains("Unknown database")) {
         throw propagate(e);
       }
       Log.info("Creating schema: " + schema);
