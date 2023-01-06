@@ -2,6 +2,7 @@ package ez;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static ox.util.Functions.map;
 import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
@@ -488,9 +489,7 @@ public abstract class DB {
   }
 
   public DB clearAllRows() {
-    for (String table : getTables()) {
-      clearRows(table);
-    }
+    execute(map(getTables(), table -> "DELETE FROM `" + schema + "`.`" + table + "`"));
     return this;
   }
 
@@ -640,6 +639,29 @@ public abstract class DB {
     Row row = selectSingleRow(
         "SELECT data_length FROM information_schema.tables WHERE table_schema = ? and table_name = ?");
     return row.getLong("data_length");
+  }
+
+  public void execute(XList<String> statements) {
+    statements.forEach(this::log);
+
+    Connection c = getConnection();
+    try {
+      Statement s = c.createStatement();
+      statements.forEach(statement -> {
+        try {
+          s.addBatch(statement);
+        } catch (SQLException e) {
+          throw propagate(e);
+        }
+      });
+      s.executeBatch();
+      s.close();
+    } catch (Exception e) {
+      System.err.println("Problem executing statements:\n " + Joiner.on('\n').join(statements));
+      throw propagate(e);
+    } finally {
+      close(c);
+    }
   }
 
   public void execute(String statement) {
