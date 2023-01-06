@@ -289,7 +289,7 @@ public abstract class DB {
     return ret;
   }
 
-  private void select(String query, Consumer<ResultSet> rowCallback, XOptional<Integer> fetchSize, Object... args) {
+  protected void select(String query, Consumer<ResultSet> rowCallback, XOptional<Integer> fetchSize, Object... args) {
     new RowSelector().select(this, query, rowCallback, fetchSize, args);
   }
 
