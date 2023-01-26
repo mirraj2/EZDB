@@ -192,11 +192,14 @@ public class Table {
   }
 
   public static String getType(DatabaseType databaseType, Class<?> type) {
-    String ret;
-    if (databaseType == DatabaseType.POSTGRES) {
-      ret = postgresTypesMap.get(type);
-    } else {
-      ret = columnTypesMap.get(type);
+    String ret = null;
+    while (ret == null && type != null) {
+      if (databaseType == DatabaseType.POSTGRES) {
+        ret = postgresTypesMap.get(type);
+      } else {
+        ret = columnTypesMap.get(type);
+      }
+      type = type.getSuperclass();
     }
     if (ret == null) {
       throw new RuntimeException("Unsupported type: " + type);
@@ -350,6 +353,7 @@ public class Table {
     columnTypesMap.put(Money.class, "BIGINT");
     columnTypesMap.put(Boolean.class, "BOOLEAN");
     columnTypesMap.put(String.class, "VARCHAR(" + MAX_STRING_SIZE + ")");
+    columnTypesMap.put(Enum.class, "VARCHAR(" + MAX_STRING_SIZE + ")");
     columnTypesMap.put(LocalDateTime.class, "CHAR(63)");
     columnTypesMap.put(LocalDate.class, "DATE");
     columnTypesMap.put(LocalTime.class, "CHAR(5)");
