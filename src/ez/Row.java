@@ -52,7 +52,7 @@ public class Row implements Iterable<String> {
 
   public Long getLong(String key) {
     Object o = map.get(key);
-    if (o instanceof Long) {
+    if (o instanceof Long || o == null) {
       return (Long) o;
     }
     return ((Number) o).longValue();
