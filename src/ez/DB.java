@@ -471,7 +471,7 @@ public abstract class DB {
 
     table.databaseType(databaseType);
 
-    if (getTables(true).contains(table.name)) {
+    if (hasTable(table.name)) {
       return false;
     }
 
