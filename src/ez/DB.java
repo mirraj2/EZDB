@@ -435,32 +435,19 @@ public abstract class DB {
   }
 
   public XSet<String> getTables(boolean lowercase) {
-    log("getTables()");
-
-    XSet<String> ret = XSet.create();
-    Connection c = getConnection();
-    try {
-      ResultSet rs = c.getMetaData().getTables(schema, schema, "%", new String[] { "TABLE" });
-
-      while (rs.next()) {
-        String s = rs.getString(3);
-        if (lowercase) {
-          s = s.toLowerCase();
-        }
-        ret.add(s);
-      }
-    } catch (Exception e) {
-      throw propagate(e);
-    } finally {
-      close(c);
-    }
-    return ret;
+    return this.<String>selectSingleColumn("SELECT TABLE_NAME FROM information_schema.tables"
+        + " WHERE TABLE_SCHEMA = ? AND TABLE_TYPE != 'VIEW'", schema).toSet();
   }
 
   public XSet<String> getTablesWithColumn(String columnName) {
     XList<String> ret = selectSingleColumn("SELECT DISTINCT TABLE_NAME FROM information_schema.columns"
         + " WHERE COLUMN_NAME = ? AND TABLE_SCHEMA = ?", columnName, schema);
     return ret.toSet();
+  }
+
+  public String getCreateTableStatement(String tableName) {
+    Row row = selectSingleRow("SHOW CREATE TABLE " + escape(tableName));
+    return row.get("Create Table");
   }
 
   /**
