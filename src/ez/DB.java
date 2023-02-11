@@ -447,7 +447,8 @@ public abstract class DB {
 
   public String getCreateTableStatement(String tableName) {
     Row row = selectSingleRow("SHOW CREATE TABLE " + escape(tableName));
-    return row.get("Create Table");
+    String ret = row.get("Create Table");
+    return ret.replace("CREATE TABLE ", "CREATE TABLE IF NOT EXISTS ");
   }
 
   /**
