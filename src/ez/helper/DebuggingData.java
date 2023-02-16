@@ -40,9 +40,10 @@ public class DebuggingData {
           XList<Query> queries = groupedQueries.get(sqlQuery);
           int numDuplicates = countDuplicates(queries);
           if (numDuplicates > 1) {
-            sb.append(format("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates, abbreviate(sqlQuery, 100)));
+            sb.append(
+                format("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates, abbreviate(sqlQuery, 200)));
           } else {
-            sb.append(format("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, 100)));
+            sb.append(format("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, 200)));
           }
         });
 
