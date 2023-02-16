@@ -801,7 +801,27 @@ public abstract class DB {
 
     if (debug) {
       if (args.length > 0) {
-        query += " [" + Arrays.toString(args) + "]";
+        long nQuestionMarks = query.chars().filter(i -> i == '?').count();
+        if (nQuestionMarks == args.length) {
+          StringBuilder sb = new StringBuilder();
+          int argIndex = 0;
+          for (int i = 0; i < query.length(); i++) {
+            char c = query.charAt(i);
+            if (c == '?') {
+              Object o = args[argIndex++];
+              if (o instanceof LocalDate || o instanceof String) {
+                sb.append("'").append(o).append("'");
+              } else {
+                sb.append(o);
+              }
+            } else {
+              sb.append(c);
+            }
+          }
+          query = sb.toString();
+        } else {
+          query += " [" + Arrays.toString(args) + "]";
+        }
       }
       if (watch != null) {
         query += " (" + watch + ")";

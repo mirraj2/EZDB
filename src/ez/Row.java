@@ -1,7 +1,6 @@
 package ez;
 
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -174,33 +173,13 @@ public class Row implements Iterable<String> {
     Json ret = Json.object();
     map.forEach((key, value) -> {
       key = keyTransform.getOrDefault(key, key);
-      add(ret, key, value);
+      ret.with(key, value);
     });
     return ret;
   }
 
   public Collection<Object> values() {
     return map.values();
-  }
-
-  private void add(Json json, String key, Object value) {
-    if (value == null) {
-      return;
-    }
-
-    if (value instanceof String) {
-      json.with(key, (String) value);
-    } else if (value instanceof Number) {
-      json.with(key, (Number) value);
-    } else if (value instanceof Boolean) {
-      json.with(key, value);
-    } else if (value instanceof Date) {
-      json.with(key, value.toString());
-    } else if (value instanceof Timestamp) {
-      json.with(key, value.toString());
-    } else {
-      throw new RuntimeException("Unhandled type: " + value.getClass());
-    }
   }
 
 }

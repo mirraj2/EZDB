@@ -46,14 +46,14 @@ public class PostgresDB extends DB {
   public boolean hasTable(String table) {
     return null != selectSingleRow("SELECT table_name"
         + " FROM INFORMATION_SCHEMA.tables WHERE table_catalog = ? AND table_name = ? LIMIT 1",
-        schema, table);
+        catalog, table);
   }
 
   @Override
   public boolean hasColumn(String table, String column) {
     return null != selectSingleRow("SELECT column_name"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_catalog = ? AND table_name = ? AND column_name = ? LIMIT 1",
-        schema, table, column);
+        catalog, table, column);
   }
 
   @Override
