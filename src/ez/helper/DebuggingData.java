@@ -14,6 +14,8 @@ import ox.x.XMultimap;
 
 public class DebuggingData {
 
+  public static int MAX_LENGTH = 128;
+
   private final XList<Query> queries = XList.create();
 
   public void store(String sqlQuery, XList<Object> args, Duration elapsed) {
@@ -41,9 +43,10 @@ public class DebuggingData {
           int numDuplicates = countDuplicates(queries);
           if (numDuplicates > 1) {
             sb.append(
-                format("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates, abbreviate(sqlQuery, 200)));
+                format("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates,
+                    abbreviate(sqlQuery, MAX_LENGTH)));
           } else {
-            sb.append(format("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, 200)));
+            sb.append(format("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, MAX_LENGTH)));
           }
         });
 

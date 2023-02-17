@@ -305,6 +305,7 @@ public class Table {
     return map(rows, row -> fromRow(row, c));
   }
 
+  // TODO optimize
   public <T> T fromRow(Row row, Class<T> c) {
     if (row == null) {
       return null;
