@@ -17,8 +17,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import org.postgresql.geometric.PGpoint;
-
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -32,6 +30,8 @@ import ox.Money;
 import ox.Percent;
 import ox.Reflection;
 import ox.x.XList;
+
+import io.github.sebasbaumh.postgis.PGgeometry;
 
 public class Table {
 
@@ -364,7 +364,7 @@ public class Table {
     postgresTypesMap.putAll(columnTypesMap);
     postgresTypesMap.put(Double.class, "double precision");
     postgresTypesMap.put(Json.class, "jsonb");
-    postgresTypesMap.put(PGpoint.class, "geometry");
+    postgresTypesMap.put(PGgeometry.class, "geometry");
   }
 
   public static void registerColumn(Class<?> columnType, String sqlType) {
