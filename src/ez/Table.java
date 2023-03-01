@@ -192,6 +192,7 @@ public class Table {
   }
 
   public static String getType(DatabaseType databaseType, Class<?> type) {
+    final Class<?> originalType = type;
     String ret = null;
     while (ret == null && type != null) {
       if (databaseType == DatabaseType.POSTGRES) {
@@ -202,7 +203,7 @@ public class Table {
       type = type.getSuperclass();
     }
     if (ret == null) {
-      throw new RuntimeException("Unsupported type: " + type);
+      throw new RuntimeException("Unsupported type: " + originalType);
     }
     return ret;
   }
