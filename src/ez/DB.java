@@ -62,7 +62,7 @@ import ox.x.XSet;
 public abstract class DB {
 
   public static boolean debug = false;
-  public static int maxDebugLength = 1000;
+  public static int maxDebugLength = 2000;
 
   /**
    * Used to indicate that a value should be inserted as 'null' when calling insertRawRows()

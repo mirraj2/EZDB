@@ -31,6 +31,10 @@ public class Row implements Iterable<String> {
     map = Maps.newLinkedHashMapWithExpectedSize(expectedSize);
   }
 
+  public boolean hasKey(String key) {
+    return map.containsKey(key);
+  }
+
   public Row with(String key, Object value) {
     map.put(key, value);
     return this;
