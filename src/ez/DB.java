@@ -117,7 +117,7 @@ public abstract class DB {
     this.maxConnections = maxConnections;
 
     try {
-      DriverManager.registerDriver(new com.mysql.jdbc.Driver());
+      DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
     } catch (SQLException e) {
       throw propagate(e);
     }
