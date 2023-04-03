@@ -858,4 +858,8 @@ public abstract class DB {
     }
   }
 
+  public HikariDataSource getConnectionPool() {
+    return source;
+  }
+
 }
