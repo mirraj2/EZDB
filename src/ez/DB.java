@@ -570,6 +570,10 @@ public abstract class DB {
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
         schema, table, oldName);
 
+    if (row == null) {
+      throw new RuntimeException("Column doesn't exist: " + table + "." + oldName);
+    }
+
     String type = row.get("COLUMN_TYPE");
 
     execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
