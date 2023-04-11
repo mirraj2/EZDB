@@ -71,7 +71,7 @@ public abstract class DB {
    */
   public static final String NULL = "ez.DB.NULL";
 
-  private final HikariDataSource source;
+  private HikariDataSource source;
 
   protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
@@ -163,6 +163,26 @@ public abstract class DB {
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  public void resetConnectionPool() {
+    HikariDataSource oldSource = source;
+    HikariDataSource newSource = copySource();
+
+    source = newSource;
+    oldSource.close();
+  }
+
+  private HikariDataSource copySource() {
+    HikariDataSource ret = new HikariDataSource();
+
+    ret.setJdbcUrl(source.getJdbcUrl());
+    ret.setUsername(user);
+    ret.setPassword(pass);
+    ret.setMaximumPoolSize(maxConnections);
+    ret.setAutoCommit(true);
+
+    return ret;
   }
 
   public void batchStatements(Runnable callback) {
