@@ -22,8 +22,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -81,6 +83,9 @@ public abstract class DB {
   public final boolean ssl;
 
   protected final int maxConnections;
+
+  private boolean batchStatements = false;
+  private List<String> batchedStatements = Collections.synchronizedList(new ArrayList<>());
 
   protected DB(DatabaseType databaseType, String schema) {
     this.databaseType = databaseType;
@@ -158,6 +163,18 @@ public abstract class DB {
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  public void batchStatements(Runnable callback) {
+    checkState(batchStatements == false);
+
+    batchStatements = true;
+    callback.run();
+    batchStatements = false;
+
+    XList<String> toRun = XList.create(batchedStatements);
+    batchedStatements.clear();
+    execute(toRun);
   }
 
   public String escape(String s) {
@@ -634,29 +651,15 @@ public abstract class DB {
   }
 
   public void execute(XList<String> statements) {
-    statements.forEach(this::log);
-
-    Connection c = getConnection();
-    try {
-      Statement s = c.createStatement();
-      statements.forEach(statement -> {
-        try {
-          s.addBatch(statement);
-        } catch (SQLException e) {
-          throw propagate(e);
-        }
-      });
-      s.executeBatch();
-      s.close();
-    } catch (Exception e) {
-      System.err.println("Problem executing statements:\n " + Joiner.on('\n').join(statements));
-      throw propagate(e);
-    } finally {
-      close(c);
-    }
+    execute(statements.join(";\n"));
   }
 
   public void execute(String statement) {
+    if (batchStatements) {
+      batchedStatements.add(statement);
+      return;
+    }
+
     log(statement);
 
     Connection c = getConnection();

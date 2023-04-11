@@ -26,15 +26,14 @@ public class ForeignKeyConstraint {
   }
 
   public void execute(DB db) {
-    // make sure this constraint is deleted if it already exists.
-    db.removeForeignKey(sourceTable, sourceColumn, foreignTable, foreignColumn);
+    db.execute(getAlterStatement(db.databaseType));
+  }
 
-    DatabaseType type = db.databaseType;
-
+  public String getAlterStatement(DatabaseType type) {
     StringBuilder sb = new StringBuilder("ALTER TABLE ");
     sb.append(type.escape(sourceTable)).append(" ADD");
     sb.append(getCreationStatement(type));
-    db.execute(sb.toString());
+    return sb.toString();
   }
 
   public String getCreationStatement(DatabaseType type) {

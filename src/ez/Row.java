@@ -1,6 +1,7 @@
 package ez;
 
 import java.sql.Date;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -16,6 +17,7 @@ import ez.misc.DatabaseType;
 import ox.Json;
 import ox.Money;
 import ox.Percent;
+import ox.Reflection;
 import ox.util.Utils;
 import ox.x.XOptional;
 
@@ -59,6 +61,10 @@ public class Row implements Iterable<String> {
       return (Long) o;
     }
     return ((Number) o).longValue();
+  }
+
+  public Instant getTimestamp(String key) {
+    return Reflection.convert(map.get(key), Instant.class);
   }
 
   public Double getDouble(String key) {
