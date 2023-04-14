@@ -12,7 +12,6 @@ import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -117,18 +116,6 @@ public abstract class DB {
     this.ssl = ssl;
     this.maxConnections = maxConnections;
 
-    try {
-      DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
-    } catch (SQLException e) {
-      throw propagate(e);
-    }
-
-    try {
-      DriverManager.registerDriver(new org.postgresql.Driver());
-    } catch (SQLException e) {
-      throw propagate(e);
-    }
-
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
@@ -152,7 +139,8 @@ public abstract class DB {
       Log.debug(url);
     }
 
-    connectionPool = new BasicConnectionPool(url, user, pass).maxConnections(maxConnections).autoCommit(true)
+    connectionPool = new BasicConnectionPool(databaseType, url, user, pass).maxConnections(maxConnections)
+        .autoCommit(true)
         .initialize();
   }
 
