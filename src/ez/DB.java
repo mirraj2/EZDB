@@ -11,8 +11,6 @@ import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -40,8 +38,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.zaxxer.hikari.HikariDataSource;
-import com.zaxxer.hikari.pool.HikariPool;
 
 import ez.RowInserter.ReplaceOptions;
 import ez.Table.Index;
@@ -50,12 +46,12 @@ import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 import ez.misc.IsolationLevel;
 import ez.misc.RollbackException;
+import ez.pool.BasicConnectionPool;
 
 import ox.Json;
 import ox.Log;
 import ox.Money;
 import ox.Percent;
-import ox.Reflection;
 import ox.x.XList;
 import ox.x.XMap;
 import ox.x.XOptional;
@@ -71,7 +67,7 @@ public abstract class DB {
    */
   public static final String NULL = "ez.DB.NULL";
 
-  private HikariDataSource source;
+  private BasicConnectionPool connectionPool;
 
   protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
@@ -98,7 +94,7 @@ public abstract class DB {
       this.schema = schema;
     }
     ssl = false;
-    source = null;
+    connectionPool = null;
     this.maxConnections = 10;
   }
 
@@ -156,33 +152,8 @@ public abstract class DB {
       Log.debug(url);
     }
 
-    source = new HikariDataSource();
-    source.setJdbcUrl(url);
-    source.setUsername(user);
-    source.setPassword(pass);
-    source.setMaximumPoolSize(maxConnections);
-    // source.setConnectionInitSql("SET NAMES utf8mb4");
-    source.setAutoCommit(true);
-  }
-
-  public void resetConnectionPool() {
-    HikariDataSource oldSource = source;
-    HikariDataSource newSource = copySource();
-
-    source = newSource;
-    oldSource.close();
-  }
-
-  private HikariDataSource copySource() {
-    HikariDataSource ret = new HikariDataSource();
-
-    ret.setJdbcUrl(source.getJdbcUrl());
-    ret.setUsername(user);
-    ret.setPassword(pass);
-    ret.setMaximumPoolSize(maxConnections);
-    ret.setAutoCommit(true);
-
-    return ret;
+    connectionPool = new BasicConnectionPool(url, user, pass).maxConnections(maxConnections).autoCommit(true)
+        .initialize();
   }
 
   public void batchStatements(Runnable callback) {
@@ -755,7 +726,7 @@ public abstract class DB {
     Connection ret = transactionConnections.get();
     if (ret == null) {
       try {
-        ret = source.getConnection();
+        ret = connectionPool.getConnection();
       } catch (Exception e) {
         throw new RuntimeException("Problem connecting to " + host, e);
       }
@@ -770,7 +741,7 @@ public abstract class DB {
    * Closes all connections to this database. Future queries using this DB object will fail.
    */
   public void shutdown() {
-    source.close();
+    connectionPool.close();
   }
 
   private static final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class,
@@ -859,19 +830,6 @@ public abstract class DB {
   }
 
   /**
-   * For debugging
-   */
-  public void printPoolStats(String prefix) {
-    HikariPool pool = Reflection.get(source, "pool");
-    Method method = Reflection.getMethod(pool.getClass(), "logPoolState");
-    try {
-      method.invoke(pool, new Object[] { new String[] { prefix } });
-    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
    * Tracks all database requests performed during the callback and then reports debugging information about them.
    */
   public void captureDebuggingData(Runnable callback) {
@@ -883,10 +841,6 @@ public abstract class DB {
     } finally {
       threadDebuggingData.set(null);
     }
-  }
-
-  public HikariDataSource getConnectionPool() {
-    return source;
   }
 
 }

@@ -1,7 +1,6 @@
-EZDB
-====
+# EZDB
 
-Provides an easy-to-use API for accessing your database. There are only 3 classes: DB, Table, and Row.
+Provides an easy-to-use API for accessing your database.
 
 Getting started is this easy:
 
@@ -30,4 +29,4 @@ public boolean isAlive(String heroName){
 }
 ```
 
-EZDB relies on our favorite Java utilities library called Ox.  You can find it here:  https://github.com/mirraj2/ox
+EZDB relies on our favorite Java utilities library called Ox. You can find it here: https://github.com/mirraj2/ox
