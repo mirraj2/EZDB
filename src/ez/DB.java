@@ -73,7 +73,12 @@ public abstract class DB {
 
   private HikariDataSource source;
 
-  protected final InheritableThreadLocal<Connection> transactionConnections = new InheritableThreadLocal<>();
+  /**
+   * Making this Inheritable causes all manner of bugs (e.g. "java.sql.SQLException: Connection is closed"). Don't do
+   * it!
+   */
+  protected final ThreadLocal<Connection> transactionConnections = new ThreadLocal<>();
+
   private final InheritableThreadLocal<DebuggingData> threadDebuggingData = new InheritableThreadLocal<>();
   protected final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
