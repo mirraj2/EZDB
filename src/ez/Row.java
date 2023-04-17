@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 import ez.misc.DatabaseType;
@@ -176,13 +175,8 @@ public class Row implements Iterable<String> {
   }
 
   public Json toJson() {
-    return toJson(ImmutableMap.of());
-  }
-
-  public Json toJson(Map<String, String> keyTransform) {
     Json ret = Json.object();
     map.forEach((key, value) -> {
-      key = keyTransform.getOrDefault(key, key);
       ret.with(key, value);
     });
     return ret;
