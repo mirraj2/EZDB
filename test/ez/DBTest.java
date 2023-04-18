@@ -1,4 +1,5 @@
 package ez;
+
 import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Utils.count;
 
@@ -13,6 +14,7 @@ public class DBTest {
 
   @BeforeEach
   public void before() {
+    db.ensureSchemaExists();
     if (db.hasTable("user")) {
       db.deleteTable("user");
     }
