@@ -10,11 +10,12 @@ import java.util.Collection;
 import java.util.Map.Entry;
 
 import ox.Log;
+import ox.x.XList;
 
 public class RowUpdater {
 
   public int update(DB db, String query, Object... args) {
-    db.log(query);
+    db.log(query, args);
 
     Connection conn = db.getConnection();
     PreparedStatement statement = null;
@@ -44,18 +45,27 @@ public class RowUpdater {
     String query = "";
     try {
       query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.schema, table);
-      db.log(query);
+      // db.log(query);
 
       statement = conn.prepareStatement(query);
+      XList<Object> args = XList.create();
       for (Row row : rows) {
         int c = 1;
         for (Entry<String, Object> e : row.map.entrySet()) {
           if (e.getKey().equals("id")) {
             continue;
           }
-          statement.setObject(c++, DB.convert(e.getValue()));
+          Object o = DB.convert(e.getValue());
+          args.add(o);
+          statement.setObject(c++, o);
         }
-        statement.setObject(c++, DB.convert(row.map.get("id")));
+        Object o = DB.convert(row.map.get("id"));
+        args.add(o);
+        statement.setObject(c++, o);
+        if (DB.debug) {
+          db.log(query, args.toArray());
+        }
+        args.clear();
         statement.addBatch();
       }
       statement.executeBatch();
