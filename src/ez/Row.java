@@ -51,7 +51,12 @@ public class Row implements Iterable<String> {
   }
 
   public Integer getInt(String key) {
-    return (Integer) map.get(key);
+    Object ret = map.get(key);
+    if (ret instanceof Integer || ret == null) {
+      return (Integer) ret;
+    } else {
+      return ((Number) ret).intValue();
+    }
   }
 
   public Long getLong(String key) {
