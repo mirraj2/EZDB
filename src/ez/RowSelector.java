@@ -36,7 +36,10 @@ public class RowSelector {
 
       if (db instanceof PostgresDB) {
         // postgres fetchsize doesn't work without this line
-        conn.setAutoCommit(false);
+        if (fetchSize.isPresent()) {
+          conn.setAutoCommit(false);
+          statement.setFetchSize(fetchSize.get());
+        }
       } else if (db instanceof MySQLDB) {
         if (fetchSize.isPresent()) {
           // mysql doesn't respect the fetchsize, but setting to MIN_VALUE will cause it to stream results
