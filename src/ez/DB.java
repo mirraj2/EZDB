@@ -456,6 +456,8 @@ public abstract class DB {
     return ret;
   }
 
+  public abstract boolean hasSchema(String schema);
+
   public abstract boolean hasTable(String table);
 
   public abstract boolean hasColumn(String table, String column);

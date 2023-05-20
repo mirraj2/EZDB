@@ -43,6 +43,11 @@ public class PostgresDB extends DB {
   }
 
   @Override
+  public boolean hasSchema(String schema) {
+    throw new RuntimeException("Not Implemented.");
+  }
+
+  @Override
   public boolean hasTable(String table) {
     return null != selectSingleRow("SELECT table_name"
         + " FROM INFORMATION_SCHEMA.tables WHERE table_catalog = ? AND table_name = ? LIMIT 1",

@@ -78,6 +78,12 @@ public class MySQLDB extends DB {
   }
 
   @Override
+  public boolean hasSchema(String schema) {
+    return null != selectSingleRow("SELECT `SCHEMA_NAME`"
+        + " FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ? LIMIT 1", schema);
+  }
+
+  @Override
   public boolean hasTable(String table) {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
