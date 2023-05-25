@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import ez.helper.FastDeserializer;
 import ez.helper.ForeignKeyConstraint;
 import ez.misc.DatabaseType;
 
@@ -54,7 +55,7 @@ public class Table {
   private final Map<String, String> columnComments = Maps.newLinkedHashMap();
 
   private final List<Integer> primaryIndices = Lists.newArrayList();
-  private final Set<String> autoConvertColumns = Sets.newHashSet();
+  public final Set<String> autoConvertColumns = Sets.newHashSet();
   final List<Index> indices = Lists.newArrayList();
 
   private final Set<ForeignKeyConstraint> foreignKeyConstraints = Sets.newHashSet();
@@ -64,6 +65,8 @@ public class Table {
   public boolean caseSensitive = true;
 
   private DatabaseType databaseType = DatabaseType.MYSQL;
+
+  private Map<Class<?>, FastDeserializer<?>> deserializers = Maps.newHashMap();
 
   public Table(String name) {
     this(name, DatabaseType.MYSQL);
@@ -302,24 +305,19 @@ public class Table {
     return map(list, this::toRow);
   }
 
+
+  @SuppressWarnings("unchecked")
   public <T> XList<T> fromRows(Collection<Row> rows, Class<T> c) {
-    return map(rows, row -> fromRow(row, c));
+    FastDeserializer<T> deserializer = (FastDeserializer<T>) deserializers.computeIfAbsent(c,
+        (Class<?> cc) -> new FastDeserializer<T>(this, (Class<T>) cc));
+    return map(rows, deserializer::deserialize);
   }
 
-  // TODO optimize
+  @SuppressWarnings("unchecked")
   public <T> T fromRow(Row row, Class<T> c) {
-    if (row == null) {
-      return null;
-    }
-
-    T ret = Reflection.newInstance(c);
-    row.map.forEach((k, v) -> {
-      if (v == null && autoConvertColumns.contains(k)) {
-        v = "";
-      }
-      Reflection.set(ret, k, v);
-    });
-    return ret;
+    FastDeserializer<T> deserializer = (FastDeserializer<T>) deserializers.computeIfAbsent(c,
+        (Class<?> cc) -> new FastDeserializer<T>(this, (Class<T>) cc));
+    return deserializer.deserialize(row);
   }
 
   public Set<String> getAutoConvertColumns() {

@@ -22,7 +22,7 @@ import ox.x.XOptional;
 
 public class Row implements Iterable<String> {
 
-  final Map<String, Object> map;
+  public final Map<String, Object> map;
 
   public Row() {
     this(16);
