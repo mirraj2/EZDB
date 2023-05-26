@@ -64,7 +64,13 @@ public class Row implements Iterable<String> {
     if (o instanceof Long || o == null) {
       return (Long) o;
     }
-    return ((Number) o).longValue();
+    if (o instanceof Number) {
+      return ((Number) o).longValue();
+    }
+    if (o instanceof Instant) {
+      return ((Instant) o).toEpochMilli();
+    }
+    throw new RuntimeException("Unhandled type: " + o.getClass());
   }
 
   public Instant getTimestamp(String key) {

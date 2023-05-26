@@ -47,14 +47,22 @@ public class FastDeserializer<T> {
     private final Field field;
     private final Type targetType;
     private final Class<?> wrappedClass;
+    private Object sentinalValue;
 
     public FieldDeserializer(String fieldName) {
       this.fieldName = fieldName;
-      if (table.autoConvertColumns.contains(fieldName)) {
-        applier = this::applyWithAutoConvert;
+
+      sentinalValue = table.columnSentinalValues.get(fieldName);
+      if (sentinalValue != null) {
+        applier = this::applyWithSentinalValue;
       } else {
-        applier = this::apply;
+        if (table.autoConvertColumns.contains(fieldName)) {
+          applier = this::applyWithAutoConvert;
+        } else {
+          applier = this::apply;
+        }
       }
+
       field = Reflection.getField(c, fieldName);
       if (field == null) {
         applier = (object, value) -> {
@@ -80,6 +88,14 @@ public class FastDeserializer<T> {
     private void applyWithAutoConvert(T ret, Object value) {
       if (value == null) {
         apply(ret, "");
+      } else {
+        apply(ret, value);
+      }
+    }
+
+    private void applyWithSentinalValue(T ret, Object value) {
+      if (sentinalValue.equals(value)) {
+        apply(ret, null);
       } else {
         apply(ret, value);
       }

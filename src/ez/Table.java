@@ -1,5 +1,6 @@
 package ez;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Functions.map;
@@ -56,6 +57,7 @@ public class Table {
 
   private final List<Integer> primaryIndices = Lists.newArrayList();
   public final Set<String> autoConvertColumns = Sets.newHashSet();
+  public final Map<String, Object> columnSentinalValues = Maps.newHashMap();
   final List<Index> indices = Lists.newArrayList();
 
   private final Set<ForeignKeyConstraint> foreignKeyConstraints = Sets.newHashSet();
@@ -181,6 +183,20 @@ public class Table {
     return this;
   }
 
+  /**
+   * Stores NULL as a special sentinel value. This can be useful when performing a unique index across multiple columns.
+   * 
+   * If you have two rows: [AValue, NULL] [AValue, NULL], MySQL would normally allow both of these rows even if there
+   * was a unique index b/c NULL is treated as "unknown". By using this method, we can get MySQL to throw an exception
+   * when there is duplicate data.
+   */
+  public Table sentinelNullValue(Object sentinelValue) {
+    checkArgument(sentinelValue != null, "sentinelValue cannot be null!");
+    checkState(!lastColumnAdded.isEmpty());
+    columnSentinalValues.put(lastColumnAdded, sentinelValue);
+    return this;
+  }
+
   public Collection<Index> getIndices() {
     return indices;
   }
@@ -290,8 +306,10 @@ public class Table {
       } else if (value instanceof Iterable) {
         value = Json.array((Iterable<?>) value);
       }
-      if (autoConvertColumns.contains(column)) {
-        if ("".equals(value)) {
+      if (null == value) {
+        value = columnSentinalValues.get(column);
+      } else if ("".equals(value)) {
+        if (autoConvertColumns.contains(column)) {
           value = null;
         }
       }
@@ -304,7 +322,6 @@ public class Table {
   public XList<Row> toRows(Iterable<?> list) {
     return map(list, this::toRow);
   }
-
 
   @SuppressWarnings("unchecked")
   public <T> XList<T> fromRows(Collection<Row> rows, Class<T> c) {
