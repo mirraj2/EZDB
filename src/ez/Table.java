@@ -259,7 +259,6 @@ public class Table {
       } else {
         s += CASE_INSENSITIVE_COLLATION;
       }
-      s += ";";
       return s;
     } else {
       String s = "CREATE TABLE " + databaseType.escape(name) + " (\n";
@@ -268,7 +267,7 @@ public class Table {
       }
       s += createForeignKeys();
       s = s.substring(0, s.length() - 2);
-      s += ");\n";
+      s += ")\n";
       return s;
     }
   }

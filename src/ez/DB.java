@@ -678,7 +678,26 @@ public abstract class DB {
   }
 
   public void execute(XList<String> statements) {
-    execute(statements.join(";\n"));
+    statements.forEach(this::log);
+
+    Connection c = getConnection();
+    try {
+      Statement s = c.createStatement();
+      statements.forEach(statement -> {
+        try {
+          s.addBatch(statement);
+        } catch (SQLException e) {
+          throw propagate(e);
+        }
+      });
+      s.executeBatch();
+      s.close();
+    } catch (Exception e) {
+      System.err.println("Problem executing statements:\n " + Joiner.on('\n').join(statements));
+      throw propagate(e);
+    } finally {
+      close(c);
+    }
   }
 
   public void execute(String statement) {
