@@ -226,7 +226,7 @@ public abstract class DB {
    * Checks if this is a valid name for a table, column, etc. Must consist of only letters, numbers, and underscores.
    */
   public static boolean isValidName(String name) {
-    return Pattern.matches("^[a-z][a-z0-9_.]*$", name);
+    return Pattern.matches("^[a-z][a-z0-9_.-]*$", name);
   }
 
   public DB disableForeignKeyChecks(Runnable r) {
