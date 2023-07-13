@@ -1,6 +1,6 @@
 package ez.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Functions.map;
 import static ox.util.Utils.format;
 import static ox.util.Utils.normalize;
@@ -8,6 +8,7 @@ import static ox.util.Utils.propagate;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
@@ -59,7 +60,7 @@ public class MySQLDB extends DB {
   public DB usingSchema(String schema) {
     schema = normalize(schema);
     if (!schema.isEmpty()) {
-      checkArgument(isValidName(schema));
+      checkState(Pattern.matches("^[a-z0-9_.-]*$", schema), "Bad schema name: " + schema);
       if (!getSchemas().contains(schema.toLowerCase())) {
         createSchema(schema);
       }

@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 import org.postgresql.util.PGobject;
 
@@ -221,13 +220,6 @@ public abstract class DB {
   public abstract void createDatabase(String database);
 
   public abstract void createSchema(String schema);
-
-  /**
-   * Checks if this is a valid name for a table, column, etc. Must consist of only letters, numbers, and underscores.
-   */
-  public static boolean isValidName(String name) {
-    return Pattern.matches("^[a-z][a-z0-9_.-]*$", name);
-  }
 
   public DB disableForeignKeyChecks(Runnable r) {
     disableForeignKeyChecks.set(true);
