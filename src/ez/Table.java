@@ -68,7 +68,7 @@ public class Table {
 
   private DatabaseType databaseType = DatabaseType.MYSQL;
 
-  private Map<Class<?>, FastDeserializer<?>> deserializers = Maps.newHashMap();
+  private Map<Class<?>, FastDeserializer<?>> deserializers = Maps.newConcurrentMap();
 
   public Table(String name) {
     this(name, DatabaseType.MYSQL);
