@@ -112,6 +112,11 @@ public class Row implements Iterable<String> {
     return val == null ? null : Money.fromLong(val);
   }
 
+  public Money getDollars(String key) {
+    Long val = getLong(key);
+    return val == null ? null : Money.dollars(val);
+  }
+
   public Percent getPercent(String key) {
     return Percent.parse(get(key));
   }
