@@ -9,6 +9,7 @@ import java.time.Duration;
 import com.google.common.collect.ComparisonChain;
 
 import ox.Log;
+import ox.x.XCollection;
 import ox.x.XList;
 import ox.x.XMultimap;
 
@@ -28,8 +29,11 @@ public class DebuggingData {
     }
 
     XMultimap<String, Query> groupedQueries = queries.indexMultimap(q -> q.sqlQuery);
+    Duration totalQueryTime = getTotal(queries);
 
-    StringBuilder sb = new StringBuilder("\n\n######## DebuggingData (" + queries.size() + " queries) ########\n");
+    StringBuilder sb = new StringBuilder(
+        format("\n\n######## DebuggingData ({0} queries) ({1} ms elapsed) ########\n", queries.size(),
+            totalQueryTime.toMillis()));
 
     groupedQueries.keySet().toList()
         .sortSelf((a, b) -> {
@@ -40,14 +44,18 @@ public class DebuggingData {
         })
         .forEach(sqlQuery -> {
           XList<Query> queries = groupedQueries.get(sqlQuery);
+
           int numDuplicates = countDuplicates(queries);
+          long millis = getTotal(queries).toMillis();
+
+          sb.append(queries.size()).append("x ");
           if (numDuplicates > 1) {
-            sb.append(
-                format("{0}x ({1} duplicates) of: {2}\n", queries.size(), numDuplicates,
-                    abbreviate(sqlQuery, MAX_LENGTH)));
-          } else {
-            sb.append(format("{0}x of: {1}\n", queries.size(), abbreviate(sqlQuery, MAX_LENGTH)));
+            sb.append("(").append(numDuplicates).append(") ");
           }
+          if (millis >= 100) {
+            sb.append("(").append(millis).append(" ms) ");
+          }
+          sb.append("of: ").append(abbreviate(sqlQuery, MAX_LENGTH)).append('\n');
         });
 
     sb.append("#################################\n\n");
@@ -55,6 +63,11 @@ public class DebuggingData {
       sb.append("Summary: " + queries.size() + " queries.\n\n");
     }
     Log.debug(sb);
+  }
+
+  private Duration getTotal(XCollection<Query> queries) {
+    return queries.map(q -> q.elapsed == null ? Duration.ZERO : q.elapsed).reduce(Duration.ofNanos(0),
+        (a, b) -> a.plus(b));
   }
 
   private int countDuplicates(XList<Query> queries) {
