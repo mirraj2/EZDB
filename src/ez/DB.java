@@ -824,7 +824,10 @@ public abstract class DB {
       return o.toString();
     } else if (o.getClass().isArray()) {
       return o;
+    } else if (o instanceof Boolean) {
+      return ((Boolean) o) ? '1' : '0';
     } else {
+
       for (Class<?> c : whitelist) {
         if (c.isInstance(o)) {
           return o;
