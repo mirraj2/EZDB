@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.postgresql.util.PGobject;
 
@@ -62,6 +63,7 @@ import ox.x.XSet;
 
 public abstract class DB {
 
+  public static Function<String, String> rootDriver = s -> "jdbc:" + s;
   public static boolean debug = false;
   public static int maxDebugLength = 2000;
 
@@ -140,7 +142,7 @@ public abstract class DB {
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
-    String url = format("jdbc:{0}://{1}:{2}/{3}", type, host, port, schema);
+    String url = format("{0}://{1}:{2}/{3}", type, host, port, schema);
 
     if (databaseType == DatabaseType.MYSQL) {
       if (ssl) {
@@ -156,6 +158,7 @@ public abstract class DB {
       // url += "?adaptiveFetch=true&defaultRowFetchSize=64&maxResultBuffer=128M";
     }
 
+    url = rootDriver.apply(url);
     if (debug) {
       Log.debug(url);
     }
