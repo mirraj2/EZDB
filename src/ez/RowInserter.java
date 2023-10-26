@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.Iterator;
 import java.util.List;
 
@@ -75,6 +76,7 @@ public class RowInserter {
 
       String s = sb.toString();
 
+      System.out.println("query####@@@!: " + s);
       db.log(s);
 
       statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
@@ -82,11 +84,17 @@ public class RowInserter {
       int c = 1;
       for (Row row : rows) {
         for (Object o : row.map.values()) {
-          Object converted = DB.convert(o);
-          statement.setObject(c++, converted);
+          if (o instanceof LocalDate) {
+            statement.setDate(c++, java.sql.Date.valueOf((LocalDate) o));
+          } else {
+            Object converted = DB.convert(o);
+            statement.setObject(c++, converted);
+          }
         }
       }
+      System.out.println("final insert statement!@#@!@##@!@##@!@#$#@: " + statement.toString());
       statement.execute();
+
       generatedKeys = statement.getGeneratedKeys();
 
       Iterator<Row> iter = rows.iterator();

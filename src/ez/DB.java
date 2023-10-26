@@ -374,6 +374,10 @@ public abstract class DB {
     replace(table, ImmutableList.of(row));
   }
 
+  public void replace(Table table, Row row, String uniqueIndex) {
+    replace(table, ImmutableList.of(row), new ReplaceOptions("uniqueIndex", XSet.create()));
+  }
+
   /**
    * REPLACE works exactly like INSERT, except that the old row is deleted before the new row is inserted (based on
    * primary key or unique index)
@@ -825,7 +829,7 @@ public abstract class DB {
     } else if (o.getClass().isArray()) {
       return o;
     } else if (o instanceof Boolean) {
-      return ((Boolean) o) ? '1' : '0';
+      return ((Boolean) o) ? 1 : 0;
     } else {
 
       for (Class<?> c : whitelist) {

@@ -37,7 +37,7 @@ public class Row implements Iterable<String> {
   }
 
   public Row with(String key, Object value) {
-    map.put(key, value);
+    map.put(key.toLowerCase(), value);
     return this;
   }
 
@@ -87,9 +87,15 @@ public class Row implements Iterable<String> {
   }
 
   public Boolean getBoolean(String key) {
-    return (Boolean) map.get(key);
+    Object value = map.get(key);
+    if (value instanceof Boolean) {
+      return (Boolean) value;
+    } else if (value instanceof Integer) {
+      return ((Integer) value) != 0;
+    }
+    // Handle other types or throw exception
+    return null;
   }
-
   public Json getJson(String key) {
     Object o = map.get(key);
     if (o instanceof Json) {
@@ -137,7 +143,7 @@ public class Row implements Iterable<String> {
 
   @SuppressWarnings("unchecked")
   public <T> T getObject(String key) {
-    return (T) map.get(key);
+    return (T) map.get(key.toLowerCase());
   }
 
   // String getInsertStatement(DatabaseType databaseType, String schema, String table) {
@@ -156,7 +162,7 @@ public class Row implements Iterable<String> {
     String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isPresent() ? "REPLACE" : "INSERT";
     String s = action + " INTO " + databaseType.escape(schema) + "." + databaseType.escape(table.name) + " (";
     for (String k : map.keySet()) {
-      s += databaseType.escape(k) + ", ";
+      s += k + ", ";
     }
     s = s.substring(0, s.length() - 2);
     s += ")";

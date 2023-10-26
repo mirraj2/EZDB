@@ -80,7 +80,7 @@ public class RowSelector {
         if (labels.isEmpty()) {
           ResultSetMetaData metadata = r.getMetaData();
           for (int i = 1; i <= metadata.getColumnCount(); i++) {
-            labels.add(metadata.getColumnLabel(i));
+            labels.add(metadata.getColumnLabel(i).toLowerCase());
           }
         }
         Row theRow = row;

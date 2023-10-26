@@ -33,7 +33,7 @@ public class FastDeserializer<T> {
     T ret = Reflection.newInstance(c);
 
     row.map.forEach((k, v) -> {
-      FieldDeserializer fieldDeserializer = fieldDeserializers.computeIfAbsent(k, FieldDeserializer::new);
+      FieldDeserializer fieldDeserializer = fieldDeserializers.computeIfAbsent(k.toLowerCase(), FieldDeserializer::new);
       fieldDeserializer.applier.accept(ret, v);
     });
 
@@ -49,21 +49,28 @@ public class FastDeserializer<T> {
     private final Class<?> wrappedClass;
     private Object sentinalValue;
 
-    public FieldDeserializer(String fieldName) {
-      this.fieldName = fieldName;
+    public FieldDeserializer(String fieldNameArg) {
+      String classFieldName = findClassFieldName(fieldNameArg, c); // looking for corresponding field in class
 
-      sentinalValue = table.columnSentinalValues.get(fieldName);
+      if (classFieldName != null) {
+        field = Reflection.getField(c, classFieldName);
+        this.fieldName = classFieldName;
+      } else {
+        this.fieldName = fieldNameArg;
+        field = null;
+      }
+      sentinalValue = table.columnSentinalValues.get(this.fieldName.toLowerCase()); // Note the change here
+
       if (sentinalValue != null) {
         applier = this::applyWithSentinalValue;
       } else {
-        if (table.autoConvertColumns.contains(fieldName)) {
+        if (table.autoConvertColumns.contains(this.fieldName)) {
           applier = this::applyWithAutoConvert;
         } else {
           applier = this::apply;
         }
       }
 
-      field = Reflection.getField(c, fieldName);
       if (field == null) {
         applier = (object, value) -> {
           // no-op
@@ -73,6 +80,19 @@ public class FastDeserializer<T> {
         targetType = field.getGenericType();
         wrappedClass = TypeToken.of(targetType).getRawType();
       }
+    }
+
+    private String findClassFieldName(String tableFieldName, Class<?> startClass) {
+      Class<?> currentClass = startClass;
+      while (currentClass != null) {
+        for (Field field : currentClass.getDeclaredFields()) {
+          if (field.getName().equalsIgnoreCase(tableFieldName)) {
+            return field.getName();
+          }
+        }
+        currentClass = currentClass.getSuperclass();
+      }
+      return null;
     }
 
     private void apply(T ret, Object value) {
