@@ -10,6 +10,7 @@ import static ox.util.Utils.format;
 import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
+import static ox.util.Utils.propagateInterruption;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -93,6 +94,8 @@ public abstract class DB {
   private boolean batchStatements = false;
   private List<String> batchedStatements = Collections.synchronizedList(new ArrayList<>());
 
+  private boolean checkForInterrupts = true;
+
   protected DB(DatabaseType databaseType, String schema) {
     this.databaseType = databaseType;
     host = user = pass = "";
@@ -170,6 +173,11 @@ public abstract class DB {
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  public DB checkForInterrupts(boolean checkForInterrupts) {
+    this.checkForInterrupts = checkForInterrupts;
+    return this;
   }
 
   public void resetConnectionPool() {
@@ -773,11 +781,19 @@ public abstract class DB {
   }
 
   public Connection getConnection() {
+    // if (checkForInterrupts) {
+    // Thread thread = Thread.currentThread();
+    // Log.debug(thread + " :: " + thread.isInterrupted());
+    // if (thread.isInterrupted()) {
+    // throw new ThreadInterruptedException();
+    // }
+    // }
     Connection ret = transactionConnections.get();
     if (ret == null) {
       try {
         ret = source.getConnection();
       } catch (Exception e) {
+        propagateInterruption(e);
         throw new RuntimeException("Problem connecting to " + host, e);
       }
     }
