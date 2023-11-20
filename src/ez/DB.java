@@ -626,6 +626,10 @@ public abstract class DB {
     execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
   }
 
+  public void renameIndex(String table, String oldIndexName, String newIndexName) {
+    execute("ALTER TABLE `" + schema + "`.`" + table + "` RENAME INDEX " + oldIndexName + " " + newIndexName);
+  }
+
   public void changeColumnType(String table, String columnName, String columnType) {
     checkNotEmpty(table);
     checkNotEmpty(columnName);
