@@ -94,6 +94,7 @@ public abstract class DB {
   private boolean batchStatements = false;
   private List<String> batchedStatements = Collections.synchronizedList(new ArrayList<>());
 
+  @SuppressWarnings("unused")
   private boolean checkForInterrupts = true;
 
   protected DB(DatabaseType databaseType, String schema) {
