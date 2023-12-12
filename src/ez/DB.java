@@ -489,7 +489,7 @@ public abstract class DB {
 
   public XSet<String> getTablesWithColumn(String columnName) {
     XList<String> ret = selectSingleColumn("SELECT DISTINCT TABLE_NAME FROM information_schema.columns"
-        + " WHERE COLUMN_NAME = ? AND TABLE_SCHEMA = ?", columnName, schema);
+        + " WHERE COLUMN_NAME = ? AND TABLE_SCHEMA = ? AND TABLE_TYPE != 'VIEW'", columnName, schema);
     return ret.toSet();
   }
 
