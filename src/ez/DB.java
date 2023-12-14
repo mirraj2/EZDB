@@ -415,7 +415,7 @@ public abstract class DB {
   }
 
   public void truncate(String tableName) {
-    update("TRUNCATE table `" + tableName + "`");
+    execute("TRUNCATE table " + escape(schema) + "." + escape(tableName));
   }
 
   public int delete(String query, Object... args) {
