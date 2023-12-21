@@ -8,8 +8,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.postgresql.util.PGobject;
 
@@ -20,6 +23,7 @@ import ez.impl.MySQLDB;
 import ez.impl.PostgresDB;
 
 import ox.Json;
+import ox.Log;
 import ox.x.XOptional;
 
 public class RowSelector {
@@ -75,12 +79,15 @@ public class RowSelector {
       Object... args) {
     Row row = new Row();
     List<String> labels = Lists.newArrayList();
+    List<Function<ResultSet, Object>> getters = Lists.newArrayList();
+
     select(db, query, r -> {
       try {
         if (labels.isEmpty()) {
           ResultSetMetaData metadata = r.getMetaData();
           for (int i = 1; i <= metadata.getColumnCount(); i++) {
             labels.add(metadata.getColumnLabel(i));
+            getters.add(createGetter(metadata, i));
           }
         }
         Row theRow = row;
@@ -90,7 +97,8 @@ public class RowSelector {
           theRow = new Row();
         }
         for (int i = 1; i <= labels.size(); i++) {
-          Object val = r.getObject(i);
+          Object val = getters.get(i - 1).apply(r);
+          // Object val = r.getObject(i);
           if (val instanceof Clob) {
             Clob clob = (Clob) val;
             val = clob.getSubString(1, Math.toIntExact(clob.length()));
@@ -111,5 +119,42 @@ public class RowSelector {
       }
     }, fetchSize, args);
   }
+  
+  public static Function<ResultSet, Object> createGetter(ResultSetMetaData metadata, int columnIndex) {
+    try {
+      int type = metadata.getColumnType(columnIndex);
+      if (type == Types.DATE) {
+        return r -> {
+          try {
+            String s = r.getString(columnIndex);
+            return s == null ? null : LocalDate.parse(s);
+          } catch (SQLException e) {
+            throw propagate(e);
+          }
+        };
+      }
+      return r -> {
+        try {
+          return r.getObject(columnIndex);
+        } catch (Exception e) {
+          throw propagate(e);
+        }
+      };
+    } catch (Exception e) {
+      throw propagate(e);
+    }
+  }
+
+  public static void main(String[] args) {
+    DB db = new MySQLDB("localhost", "root", "", "ender.com");
+    for (int i = 0; i < 1000; i++) {
+      Stopwatch watch = Stopwatch.createStarted();
+      db.select("SELECT accountingDate FROM gl_tx").forEach(row -> {
+        row.getDate("accountingDate");
+      });
+      Log.debug(i + " took " + watch);
+    }
+  }
+
 
 }
