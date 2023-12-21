@@ -1,6 +1,5 @@
 package ez;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -122,8 +121,7 @@ public class Row implements Iterable<String> {
   }
 
   public LocalDate getDate(String key) {
-    Date date = (Date) map.get(key);
-    return date == null ? null : date.toLocalDate();
+    return (LocalDate) map.get(key);
   }
 
   public LocalDateTime getDateTime(String key) {
