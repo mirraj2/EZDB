@@ -280,7 +280,7 @@ public abstract class DB {
         conn.setAutoCommit(true);
         conn.close();
       } catch (Exception e) {
-        e.printStackTrace();
+        Log.error(e);
       }
     }
 
@@ -742,7 +742,7 @@ public abstract class DB {
       }
       c.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
@@ -753,7 +753,7 @@ public abstract class DB {
     try {
       statement.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
@@ -782,7 +782,7 @@ public abstract class DB {
       try {
         results.close();
       } catch (Exception e) {
-        e.printStackTrace();
+        Log.error(e);
       }
     }
   }
@@ -911,7 +911,7 @@ public abstract class DB {
     try {
       method.invoke(pool, new Object[] { new String[] { prefix } });
     } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
