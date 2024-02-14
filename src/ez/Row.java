@@ -122,8 +122,11 @@ public class Row implements Iterable<String> {
   }
 
   public LocalDate getDate(String key) {
-    Date date = (Date) map.get(key);
-    return date == null ? null : date.toLocalDate();
+    Object o = map.get(key);
+    if (o instanceof LocalDate) {
+      return (LocalDate) o;
+    }
+    return ((Date) o).toLocalDate();
   }
 
   public LocalDateTime getDateTime(String key) {

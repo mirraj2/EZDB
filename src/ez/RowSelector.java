@@ -20,6 +20,7 @@ import ez.impl.MySQLDB;
 import ez.impl.PostgresDB;
 
 import ox.Json;
+import ox.Log;
 import ox.x.XOptional;
 
 public class RowSelector {
@@ -90,7 +91,12 @@ public class RowSelector {
           theRow = new Row();
         }
         for (int i = 1; i <= labels.size(); i++) {
-          Object val = r.getObject(i);
+          Object val;
+          try {
+            val = r.getObject(i);
+          } catch (Exception e) {
+            throw new RuntimeException("Problem calling getObject on " + labels.get(i - 1), e);
+          }
           if (val instanceof Clob) {
             Clob clob = (Clob) val;
             val = clob.getSubString(1, Math.toIntExact(clob.length()));
@@ -110,6 +116,16 @@ public class RowSelector {
         throw propagate(e);
       }
     }, fetchSize, args);
+  }
+
+  public static void main(String[] args) {
+    DB db = new MySQLDB("localhost", "root", "", "ender.com");
+    for (int i = 0; i < 1000; i++) {
+      Stopwatch watch = Stopwatch.createStarted();
+      db.select("SELECT * FROM gl_tx").forEach(row -> {
+      });
+      Log.debug(i + " took " + watch);
+    }
   }
 
 }

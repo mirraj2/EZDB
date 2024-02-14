@@ -10,6 +10,7 @@ import static ox.util.Utils.format;
 import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
+import static ox.util.Utils.propagateInterruption;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.postgresql.util.PGobject;
 
@@ -62,6 +64,7 @@ import ox.x.XSet;
 
 public abstract class DB {
 
+  public static Function<String, String> rootDriver = s -> "jdbc:" + s;
   public static boolean debug = false;
   public static int maxDebugLength = 2000;
 
@@ -90,6 +93,9 @@ public abstract class DB {
 
   private boolean batchStatements = false;
   private List<String> batchedStatements = Collections.synchronizedList(new ArrayList<>());
+
+  @SuppressWarnings("unused")
+  private boolean checkForInterrupts = true;
 
   protected DB(DatabaseType databaseType, String schema) {
     this.databaseType = databaseType;
@@ -140,7 +146,7 @@ public abstract class DB {
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
-    String url = format("jdbc:{0}://{1}:{2}/{3}", type, host, port, schema);
+    String url = format("{0}://{1}:{2}/{3}", type, host, port, schema);
 
     if (databaseType == DatabaseType.MYSQL) {
       if (ssl) {
@@ -156,6 +162,7 @@ public abstract class DB {
       // url += "?adaptiveFetch=true&defaultRowFetchSize=64&maxResultBuffer=128M";
     }
 
+    url = rootDriver.apply(url);
     if (debug) {
       Log.debug(url);
     }
@@ -167,6 +174,11 @@ public abstract class DB {
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+  }
+
+  public DB checkForInterrupts(boolean checkForInterrupts) {
+    this.checkForInterrupts = checkForInterrupts;
+    return this;
   }
 
   public void resetConnectionPool() {
@@ -268,7 +280,7 @@ public abstract class DB {
         conn.setAutoCommit(true);
         conn.close();
       } catch (Exception e) {
-        e.printStackTrace();
+        Log.error(e);
       }
     }
 
@@ -403,7 +415,7 @@ public abstract class DB {
   }
 
   public void truncate(String tableName) {
-    update("TRUNCATE table `" + tableName + "`");
+    execute("TRUNCATE table " + escape(schema) + "." + escape(tableName));
   }
 
   public int delete(String query, Object... args) {
@@ -476,8 +488,10 @@ public abstract class DB {
   }
 
   public XSet<String> getTablesWithColumn(String columnName) {
-    XList<String> ret = selectSingleColumn("SELECT DISTINCT TABLE_NAME FROM information_schema.columns"
-        + " WHERE COLUMN_NAME = ? AND TABLE_SCHEMA = ?", columnName, schema);
+    XList<String> ret = selectSingleColumn("SELECT DISTINCT c.TABLE_NAME \n"
+        + "FROM information_schema.columns c\n"
+        + "JOIN information_schema.tables t ON c.TABLE_NAME = t.TABLE_NAME AND c.TABLE_SCHEMA = t.TABLE_SCHEMA\n"
+        + "WHERE c.COLUMN_NAME = ? AND c.TABLE_SCHEMA = ? AND t.TABLE_TYPE != 'VIEW'", columnName, schema);
     return ret.toSet();
   }
 
@@ -615,6 +629,10 @@ public abstract class DB {
     execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
   }
 
+  public void renameIndex(String table, String oldIndexName, String newIndexName) {
+    execute("ALTER TABLE `" + schema + "`.`" + table + "` RENAME INDEX " + oldIndexName + " " + newIndexName);
+  }
+
   public void changeColumnType(String table, String columnName, String columnType) {
     checkNotEmpty(table);
     checkNotEmpty(columnName);
@@ -724,7 +742,7 @@ public abstract class DB {
       }
       c.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
@@ -735,7 +753,7 @@ public abstract class DB {
     try {
       statement.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
@@ -764,17 +782,25 @@ public abstract class DB {
       try {
         results.close();
       } catch (Exception e) {
-        e.printStackTrace();
+        Log.error(e);
       }
     }
   }
 
   public Connection getConnection() {
+    // if (checkForInterrupts) {
+    // Thread thread = Thread.currentThread();
+    // Log.debug(thread + " :: " + thread.isInterrupted());
+    // if (thread.isInterrupted()) {
+    // throw new ThreadInterruptedException();
+    // }
+    // }
     Connection ret = transactionConnections.get();
     if (ret == null) {
       try {
         ret = source.getConnection();
       } catch (Exception e) {
+        propagateInterruption(e);
         throw new RuntimeException("Problem connecting to " + host, e);
       }
     }
@@ -885,7 +911,7 @@ public abstract class DB {
     try {
       method.invoke(pool, new Object[] { new String[] { prefix } });
     } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      e.printStackTrace();
+      Log.error(e);
     }
   }
 
