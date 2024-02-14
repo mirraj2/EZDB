@@ -14,6 +14,7 @@ import com.google.common.collect.Maps;
 import ez.misc.DatabaseType;
 
 import ox.Json;
+import ox.Log;
 import ox.Money;
 import ox.Percent;
 import ox.Reflection;
@@ -123,7 +124,7 @@ public class Row implements Iterable<String> {
 
   public LocalDate getDate(String key) {
     Object o = map.get(key);
-    if (o instanceof LocalDate) {
+    if (o == null || o instanceof LocalDate) {
       return (LocalDate) o;
     }
     return ((Date) o).toLocalDate();
@@ -131,7 +132,7 @@ public class Row implements Iterable<String> {
 
   public LocalDateTime getDateTime(String key) {
     String s = (String) map.get(key);
-    return LocalDateTime.parse(s);
+    return s == null ? null : LocalDateTime.parse(s);
   }
 
   public byte[] getBlob(String key) {
