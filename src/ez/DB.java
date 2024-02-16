@@ -86,7 +86,8 @@ public abstract class DB {
 
   public final DatabaseType databaseType;
   public final String host, user, pass;
-  public final String catalog, schema;
+  public final String catalog;
+  private final String schema;
   public final boolean ssl;
 
   protected final int maxConnections;
@@ -176,6 +177,10 @@ public abstract class DB {
     source.setAutoCommit(true);
   }
 
+  public String getSchema() {
+    return schema;
+  }
+
   public DB checkForInterrupts(boolean checkForInterrupts) {
     this.checkForInterrupts = checkForInterrupts;
     return this;
@@ -201,7 +206,7 @@ public abstract class DB {
     return ret;
   }
 
-  public void batchStatements(Runnable callback) {
+  public synchronized void batchStatements(Runnable callback) {
     checkState(batchStatements == false);
 
     batchStatements = true;
@@ -415,7 +420,7 @@ public abstract class DB {
   }
 
   public void truncate(String tableName) {
-    execute("TRUNCATE table " + escape(schema) + "." + escape(tableName));
+    execute("TRUNCATE table " + escape(getSchema()) + "." + escape(tableName));
   }
 
   public int delete(String query, Object... args) {
@@ -484,14 +489,14 @@ public abstract class DB {
 
   public XSet<String> getTables(boolean lowercase) {
     return this.<String>selectSingleColumn("SELECT TABLE_NAME FROM information_schema.tables"
-        + " WHERE TABLE_SCHEMA = ? AND TABLE_TYPE != 'VIEW'", schema).toSet();
+        + " WHERE TABLE_SCHEMA = ? AND TABLE_TYPE != 'VIEW'", getSchema()).toSet();
   }
 
   public XSet<String> getTablesWithColumn(String columnName) {
     XList<String> ret = selectSingleColumn("SELECT DISTINCT c.TABLE_NAME \n"
         + "FROM information_schema.columns c\n"
         + "JOIN information_schema.tables t ON c.TABLE_NAME = t.TABLE_NAME AND c.TABLE_SCHEMA = t.TABLE_SCHEMA\n"
-        + "WHERE c.COLUMN_NAME = ? AND c.TABLE_SCHEMA = ? AND t.TABLE_TYPE != 'VIEW'", columnName, schema);
+        + "WHERE c.COLUMN_NAME = ? AND c.TABLE_SCHEMA = ? AND t.TABLE_TYPE != 'VIEW'", columnName, getSchema());
     return ret.toSet();
   }
 
@@ -513,7 +518,7 @@ public abstract class DB {
       return false;
     }
 
-    execute(table.toSQL(schema));
+    execute(table.toSQL(getSchema()));
     for (Index index : table.indices) {
       addIndex(table.name, index.columns, index.unique);
     }
@@ -527,12 +532,12 @@ public abstract class DB {
   }
 
   public DB clearAllRows() {
-    execute(map(getTables(), table -> "DELETE FROM `" + schema + "`.`" + table + "`"));
+    execute(map(getTables(), table -> "DELETE FROM `" + getSchema() + "`.`" + table + "`"));
     return this;
   }
 
   public void clearRows(String table) {
-    execute("DELETE FROM `" + schema + "`.`" + table + "`");
+    execute("DELETE FROM `" + getSchema() + "`.`" + table + "`");
   }
 
   public void addColumn(String table, String column, Class<?> columnType) {
@@ -551,7 +556,7 @@ public abstract class DB {
     List<Row> rows = select("SELECT `COLUMN_NAME` as `name`, `DATA_TYPE` as `type`,"
         + " `CHARACTER_MAXIMUM_LENGTH` as `len`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ?",
-        schema, table);
+        getSchema(), table);
 
     XMap<String, String> ret = XMap.create();
     for (Row row : rows) {
@@ -601,14 +606,14 @@ public abstract class DB {
   }
 
   public void deleteTable(String table) {
-    execute("DROP TABLE " + escape(schema) + "." + escape(table));
+    execute("DROP TABLE " + escape(getSchema()) + "." + escape(table));
   }
 
   public void deleteTables(XList<String> tables) {
     if (tables.isEmpty()) {
       return;
     }
-    execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + schema + "`.`" + table + "`")));
+    execute("DROP TABLE " + Joiner.on(", ").join(tables.map(table -> "`" + getSchema() + "`.`" + table + "`")));
   }
 
   public void renameTable(String oldName, String newName) {
@@ -618,7 +623,7 @@ public abstract class DB {
   public void renameColumn(String table, String oldName, String newName) {
     Row row = selectSingleRow("SELECT COLUMN_TYPE"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
-        schema, table, oldName);
+        getSchema(), table, oldName);
 
     if (row == null) {
       throw new RuntimeException("Column doesn't exist: " + table + "." + oldName);
@@ -626,11 +631,11 @@ public abstract class DB {
 
     String type = row.get("COLUMN_TYPE");
 
-    execute("ALTER TABLE `" + schema + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
+    execute("ALTER TABLE `" + getSchema() + "`.`" + table + "` CHANGE `" + oldName + "` `" + newName + "` " + type);
   }
 
   public void renameIndex(String table, String oldIndexName, String newIndexName) {
-    execute("ALTER TABLE `" + schema + "`.`" + table + "` RENAME INDEX " + oldIndexName + " " + newIndexName);
+    execute("ALTER TABLE `" + getSchema() + "`.`" + table + "` RENAME INDEX " + oldIndexName + " " + newIndexName);
   }
 
   public void changeColumnType(String table, String columnName, String columnType) {
@@ -638,16 +643,16 @@ public abstract class DB {
     checkNotEmpty(columnName);
     checkNotEmpty(columnType);
 
-    execute("ALTER TABLE `" + schema + "`.`" + table +
+    execute("ALTER TABLE `" + getSchema() + "`.`" + table +
         "` CHANGE `" + columnName + "` `" + columnName + "` " + columnType);
   }
 
   public void changeColumnCollation(String table, String columnName, String collation) {
     Row row = selectSingleRow("SELECT COLUMN_TYPE"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ? AND table_name = ? AND COLUMN_NAME = ?",
-        schema, table, columnName);
+        getSchema(), table, columnName);
     String type = row.get("COLUMN_TYPE");
-    execute("ALTER TABLE `" + schema + "`.`" + table +
+    execute("ALTER TABLE `" + getSchema() + "`.`" + table +
         "` CHANGE `" + columnName + "` `" + columnName + "` " + type + " COLLATE " + collation);
   }
 
@@ -655,7 +660,7 @@ public abstract class DB {
     Row row = selectSingleRow("SELECT id FROM `" + table + "` ORDER BY id DESC LIMIT 1");
     long maxId = row == null ? 0 : row.getId();
 
-    execute("ALTER TABLE `" + schema + "`.`" + table + "` AUTO_INCREMENT = " + (maxId + 1));
+    execute("ALTER TABLE `" + getSchema() + "`.`" + table + "` AUTO_INCREMENT = " + (maxId + 1));
   }
 
   public void deleteColumn(String table, String column) {

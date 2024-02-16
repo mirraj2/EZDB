@@ -44,7 +44,7 @@ public class RowUpdater {
     PreparedStatement statement = null;
     String query = "";
     try {
-      query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.schema, table);
+      query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.getSchema(), table);
       // db.log(query);
 
       statement = conn.prepareStatement(query);

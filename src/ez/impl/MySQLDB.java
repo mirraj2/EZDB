@@ -48,9 +48,9 @@ public class MySQLDB extends DB {
       if (!Throwables.getRootCause(e).getMessage().contains("Unknown database")) {
         throw propagate(e);
       }
-      Log.info("Creating schema: " + schema);
+      Log.info("Creating schema: " + getSchema());
       DB temp = new MySQLDB(host, user, pass, "", ssl, maxConnections);
-      temp.createSchema(schema);
+      temp.createSchema(getSchema());
       temp.shutdown();
     }
     return this;
@@ -88,14 +88,14 @@ public class MySQLDB extends DB {
   public boolean hasTable(String table) {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? LIMIT 1",
-        schema, table);
+        getSchema(), table);
   }
 
   @Override
   public boolean hasColumn(String table, String column) {
     return null != selectSingleRow("SELECT `COLUMN_NAME`"
         + " FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
-        schema, table, column);
+        getSchema(), table, column);
   }
 
   @Override
@@ -103,7 +103,7 @@ public class MySQLDB extends DB {
     Row row = selectSingleRow("SELECT `CONSTRAINT_NAME`"
         + " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?"
         + " AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ? LIMIT 1",
-        schema, sourceTable, sourceColumn, foreignTable, foreignColumn);
+        getSchema(), sourceTable, sourceColumn, foreignTable, foreignColumn);
     return row == null ? "" : row.get("CONSTRAINT_NAME");
   }
 

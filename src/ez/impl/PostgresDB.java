@@ -72,7 +72,8 @@ public class PostgresDB extends DB {
         + "ON ccu.constraint_name = tc.constraint_name "
         + "AND ccu.table_schema = tc.table_schema "
         + "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = ? AND tc.table_name = ? AND kcu.column_name = ? "
-        + "AND ccu.table_name = ? AND ccu.column_name = ? LIMIT 1", schema, sourceTable, sourceColumn, foreignTable,
+        + "AND ccu.table_name = ? AND ccu.column_name = ? LIMIT 1", getSchema(), sourceTable, sourceColumn,
+        foreignTable,
         foreignColumn).get("constraint_name");
   }
 

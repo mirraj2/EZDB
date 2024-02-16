@@ -47,7 +47,7 @@ public class RowInserter {
     try {
       Row firstRow = first(rows);
       StringBuilder sb = new StringBuilder(
-          firstRow.getInsertStatementFirstPart(db.databaseType, db.schema, table,
+          firstRow.getInsertStatementFirstPart(db.databaseType, db.getSchema(), table,
               replaceOptions.map(o -> o.uniqueIndex)));
       sb.append(" VALUES ");
 
@@ -150,7 +150,7 @@ public class RowInserter {
 
     try {
       StringBuilder sb = new StringBuilder((replace ? "REPLACE" : "INSERT") +
-          " INTO `" + db.schema + "`.`" + table + "` VALUES ");
+          " INTO `" + db.getSchema() + "`.`" + table + "` VALUES ");
 
       final String placeholders = getInsertPlaceholders(Iterables.size(rows.get(0)));
       for (int i = 0; i < rows.size(); i++) {
