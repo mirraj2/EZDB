@@ -305,8 +305,7 @@ public class Table {
         value = value.toString();
       } else if (value instanceof Iterable) {
         value = Json.array((Iterable<?>) value);
-      }
-      if (value instanceof XOptional && ((XOptional<?>) value).isEmpty()) {
+      } else if (value instanceof XOptional && ((XOptional<?>) value).isEmpty()) {
         value = null;
       }
       if (null == value) {
