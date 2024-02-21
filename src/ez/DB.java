@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.postgresql.util.PGobject;
 
@@ -87,8 +88,10 @@ public abstract class DB {
   public final DatabaseType databaseType;
   public final String host, user, pass;
   public final String catalog;
-  private final String schema;
+  protected final String schema;
   public final boolean ssl;
+
+  private static XOptional<Supplier<String>> traceIdSupplier = XOptional.empty();
 
   protected final int maxConnections;
 
@@ -355,6 +358,7 @@ public abstract class DB {
 
   public void stream(String query, XOptional<Integer> fetchSize, boolean reuseRows, Consumer<Row> callback,
       Object... args) {
+    query = appendTraceId(query);
     new RowSelector().stream(this, query, fetchSize, reuseRows, callback, args);
   }
 
@@ -443,6 +447,10 @@ public abstract class DB {
     Row row = selectSingleRow(countQuery, args);
     Number n = (Number) first(row.map.values());
     return n.longValue();
+  }
+
+  public String appendTraceId(String query) {
+    return traceIdSupplier.compute(s -> "/*" + s.get() + "*/ " + query, query);
   }
 
   public XSet<String> getSchemas() {
@@ -820,6 +828,10 @@ public abstract class DB {
    */
   public void shutdown() {
     source.close();
+  }
+
+  public static void traceIdSupplier(Supplier<String> traceIdSupplier) {
+    DB.traceIdSupplier = XOptional.of(traceIdSupplier);
   }
 
   private static final Set<Class<?>> whitelist = Sets.newHashSet(Number.class, String.class, Boolean.class,

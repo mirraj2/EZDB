@@ -74,7 +74,7 @@ public class RowInserter {
       });
 
       String s = sb.toString();
-
+      s = db.appendTraceId(s);
       db.log(s);
 
       statement = conn.prepareStatement(s, Statement.RETURN_GENERATED_KEYS);
@@ -161,6 +161,7 @@ public class RowInserter {
       }
 
       String s = sb.toString();
+      s = db.appendTraceId(s);
       db.log(s);
 
       statement = conn.prepareStatement(s, Statement.NO_GENERATED_KEYS);
