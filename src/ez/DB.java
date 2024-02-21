@@ -206,7 +206,7 @@ public abstract class DB {
     return ret;
   }
 
-  public synchronized void batchStatements(Runnable callback) {
+  public void batchStatements(Runnable callback) {
     checkState(batchStatements == false);
 
     batchStatements = true;
