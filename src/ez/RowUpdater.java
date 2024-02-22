@@ -15,6 +15,7 @@ import ox.x.XList;
 public class RowUpdater {
 
   public int update(DB db, String query, Object... args) {
+    query = db.appendTraceId(query);
     db.log(query, args);
 
     Connection conn = db.getConnection();
@@ -45,6 +46,7 @@ public class RowUpdater {
     String query = "";
     try {
       query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.getSchema(), table);
+      query = db.appendTraceId(query);
       // db.log(query);
 
       statement = conn.prepareStatement(query);
