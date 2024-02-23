@@ -7,6 +7,7 @@ import static ox.util.Utils.abbreviate;
 import static ox.util.Utils.checkNotEmpty;
 import static ox.util.Utils.first;
 import static ox.util.Utils.format;
+import static ox.util.Utils.isNullOrEmpty;
 import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
@@ -450,7 +451,8 @@ public abstract class DB {
   }
 
   public String appendTraceId(String query) {
-    return traceIdSupplier.compute(s -> "/*" + s.get() + "*/ " + query, query);
+    String traceId = traceIdSupplier.compute(s -> s.get(), "");
+    return isNullOrEmpty(traceId) ? query : "/*" + traceId + "*/ " + query;
   }
 
   public XSet<String> getSchemas() {
