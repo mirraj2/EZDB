@@ -32,6 +32,7 @@ import ox.Money;
 import ox.Percent;
 import ox.Reflection;
 import ox.x.XList;
+import ox.x.XOptional;
 
 import io.github.sebasbaumh.postgis.PGgeometry;
 
@@ -185,7 +186,7 @@ public class Table {
 
   /**
    * Stores NULL as a special sentinel value. This can be useful when performing a unique index across multiple columns.
-   * 
+   *
    * If you have two rows: [AValue, NULL] [AValue, NULL], MySQL would normally allow both of these rows even if there
    * was a unique index b/c NULL is treated as "unknown". By using this method, we can get MySQL to throw an exception
    * when there is duplicate data.
@@ -304,6 +305,8 @@ public class Table {
         value = value.toString();
       } else if (value instanceof Iterable) {
         value = Json.array((Iterable<?>) value);
+      } else if (value instanceof XOptional && ((XOptional<?>) value).isEmpty()) {
+        value = null;
       }
       if (null == value) {
         value = columnSentinalValues.get(column);
