@@ -335,7 +335,8 @@ public abstract class DB {
   @SuppressWarnings("unchecked")
   public <T> XList<T> selectSingleColumn(String query, Object... args) {
     XList<T> ret = new XList<>();
-    select(query, r -> {
+    query = appendTraceId(query);
+    new RowSelector().select(this, query, r -> {
       try {
         ret.add((T) r.getObject(1));
       } catch (SQLException e) {
@@ -343,10 +344,6 @@ public abstract class DB {
       }
     }, XOptional.empty(), args);
     return ret;
-  }
-
-  protected void select(String query, Consumer<ResultSet> rowCallback, XOptional<Integer> fetchSize, Object... args) {
-    new RowSelector().select(this, query, rowCallback, fetchSize, args);
   }
 
   public void stream(String query, Consumer<Row> callback, Object... args) {
