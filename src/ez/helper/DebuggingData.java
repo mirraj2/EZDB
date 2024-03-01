@@ -9,6 +9,7 @@ import java.time.Duration;
 import com.google.common.collect.ComparisonChain;
 
 import ox.Log;
+import ox.util.Regex;
 import ox.x.XCollection;
 import ox.x.XList;
 import ox.x.XMultimap;
@@ -55,7 +56,7 @@ public class DebuggingData {
           if (millis >= 100) {
             sb.append("(").append(millis).append(" ms) ");
           }
-          sb.append("of: ").append(abbreviate(sqlQuery, MAX_LENGTH)).append('\n');
+          sb.append("of: ").append(getSQLQuery(sqlQuery)).append('\n');
         });
 
     sb.append("#################################\n\n");
@@ -63,6 +64,11 @@ public class DebuggingData {
       sb.append("Summary: " + queries.size() + " queries.\n\n");
     }
     Log.debug(sb);
+  }
+
+  private String getSQLQuery(String s) {
+    s = Regex.replaceAll("/\\*.*?\\*/", s, match -> "");
+    return abbreviate(s, MAX_LENGTH);
   }
 
   private Duration getTotal(XCollection<Query> queries) {
