@@ -389,4 +389,8 @@ public class Table {
     columnTypesMap.put(columnType, sqlType);
   }
 
+  public static void registerPostgresColumn(Class<?> columnType, String sqlType) {
+    postgresTypesMap.put(columnType, sqlType);
+  }
+
 }
