@@ -12,6 +12,7 @@ import static ox.util.Utils.normalize;
 import static ox.util.Utils.only;
 import static ox.util.Utils.propagate;
 import static ox.util.Utils.propagateInterruption;
+import static ox.util.Utils.sleep;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,6 +66,11 @@ import ox.x.XOptional;
 import ox.x.XSet;
 
 public abstract class DB {
+
+  /**
+   * Used for testing. Simulates latency with the database.
+   */
+  public static int FAKE_LATENCY_MS = 0;
 
   public static Function<String, String> rootDriver = s -> "jdbc:" + s;
   public static boolean debug = false;
@@ -807,6 +813,10 @@ public abstract class DB {
     // throw new ThreadInterruptedException();
     // }
     // }
+    if (FAKE_LATENCY_MS > 0) {
+      sleep(FAKE_LATENCY_MS);
+    }
+
     Connection ret = transactionConnections.get();
     if (ret == null) {
       try {
