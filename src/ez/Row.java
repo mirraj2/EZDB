@@ -14,7 +14,6 @@ import com.google.common.collect.Maps;
 import ez.misc.DatabaseType;
 
 import ox.Json;
-import ox.Log;
 import ox.Money;
 import ox.Percent;
 import ox.Reflection;
@@ -88,7 +87,12 @@ public class Row implements Iterable<String> {
   }
 
   public Boolean getBoolean(String key) {
-    return (Boolean) map.get(key);
+    Object o = map.get(key);
+    if (o instanceof Number) {
+      return ((Number) o).intValue() > 0;
+    } else {
+      return (Boolean) o;
+    }
   }
 
   public Json getJson(String key) {
