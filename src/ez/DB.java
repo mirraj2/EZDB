@@ -545,7 +545,7 @@ public abstract class DB {
   }
 
   public DB clearAllRows() {
-    execute(map(getTables(), table -> "DELETE FROM `" + getSchema() + "`.`" + table + "`"));
+    execute(map(getTables(), table -> "TRUNCATE TABLE `" + getSchema() + "`.`" + table + "`"));
     return this;
   }
 
