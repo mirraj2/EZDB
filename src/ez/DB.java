@@ -80,8 +80,8 @@ public abstract class DB {
    * Used to indicate that a value should be inserted as 'null' when calling insertRawRows()
    */
   public static final String NULL = "ez.DB.NULL";
-
-  private HikariDataSource source;
+  public final String primaryHost, primaryUser, primaryPass;
+  private HikariDataSource primarySource, readOnlySource;
 
   /**
    * Making this Inheritable causes all manner of bugs (e.g. "java.sql.SQLException: Connection is closed"). Don't do
@@ -93,7 +93,6 @@ public abstract class DB {
   protected final InheritableThreadLocal<Boolean> disableForeignKeyChecks = new InheritableThreadLocal<>();
 
   public final DatabaseType databaseType;
-  public final String host, user, pass;
   public final String catalog;
   protected final String schema;
   public final boolean ssl;
@@ -110,7 +109,7 @@ public abstract class DB {
 
   protected DB(DatabaseType databaseType, String schema) {
     this.databaseType = databaseType;
-    host = user = pass = "";
+    primaryHost = primaryUser = primaryPass = "";
     if (databaseType == DatabaseType.POSTGRES) {
       this.catalog = schema;
       this.schema = "public";
@@ -119,16 +118,16 @@ public abstract class DB {
       this.schema = schema;
     }
     ssl = false;
-    source = null;
+    primarySource = null;
     this.maxConnections = 10;
   }
 
   public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl,
       int maxConnections) {
     this.databaseType = checkNotNull(databaseType);
-    this.host = host;
-    this.user = user;
-    this.pass = pass;
+    primaryHost = host;
+    primaryUser = user;
+    primaryPass = pass;
 
     schema = normalize(schema);
     if (databaseType == DatabaseType.POSTGRES) {
@@ -154,6 +153,14 @@ public abstract class DB {
       throw propagate(e);
     }
 
+    primarySource = createSource(host, user, pass);
+  }
+
+  public void addReadOnlyReplica(String host, String user, String password) {
+    readOnlySource = createSource(host, user, password);
+  }
+
+  private HikariDataSource createSource(String host, String user, String password) {
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
@@ -178,13 +185,14 @@ public abstract class DB {
       Log.debug(url);
     }
 
-    source = new HikariDataSource();
+    HikariDataSource source = new HikariDataSource();
     source.setJdbcUrl(url);
     source.setUsername(user);
-    source.setPassword(pass);
+    source.setPassword(password);
     source.setMaximumPoolSize(maxConnections);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
+    return source;
   }
 
   public String getSchema() {
@@ -197,20 +205,26 @@ public abstract class DB {
   }
 
   public void resetConnectionPool() {
+    resetConnectionPool(primarySource);
+    if (readOnlySource != null) {
+      resetConnectionPool(readOnlySource);
+    }
+  }
+
+  private void resetConnectionPool(HikariDataSource source) {
     HikariDataSource oldSource = source;
-    HikariDataSource newSource = copySource();
+    HikariDataSource newSource = copySource(source);
 
     source = newSource;
     oldSource.close();
   }
 
-  private HikariDataSource copySource() {
+  private HikariDataSource copySource(HikariDataSource source) {
     HikariDataSource ret = new HikariDataSource();
-
     ret.setJdbcUrl(source.getJdbcUrl());
-    ret.setUsername(user);
-    ret.setPassword(pass);
-    ret.setMaximumPoolSize(maxConnections);
+    ret.setUsername(source.getUsername());
+    ret.setPassword(source.getPassword());
+    ret.setMaximumPoolSize(source.getMaximumPoolSize());
     ret.setAutoCommit(true);
 
     return ret;
@@ -820,10 +834,11 @@ public abstract class DB {
     Connection ret = transactionConnections.get();
     if (ret == null) {
       try {
-        ret = source.getConnection();
+        ret = readOnlySource.getConnection();
+        ret.setReadOnly(true);
       } catch (Exception e) {
         propagateInterruption(e);
-        throw new RuntimeException("Problem connecting to " + host, e);
+        throw new RuntimeException("Problem connecting to " + readOnlySource.getJdbcUrl(), e);
       }
     }
     if (normalize(disableForeignKeyChecks.get())) {
@@ -836,7 +851,7 @@ public abstract class DB {
    * Closes all connections to this database. Future queries using this DB object will fail.
    */
   public void shutdown() {
-    source.close();
+    primarySource.close();
   }
 
   public static void traceIdSupplier(Supplier<String> traceIdSupplier) {
@@ -932,7 +947,7 @@ public abstract class DB {
    * For debugging
    */
   public void printPoolStats(String prefix) {
-    HikariPool pool = Reflection.get(source, "pool");
+    HikariPool pool = Reflection.get(primarySource, "pool");
     Method method = Reflection.getMethod(pool.getClass(), "logPoolState");
     try {
       method.invoke(pool, new Object[] { new String[] { prefix } });
@@ -956,7 +971,7 @@ public abstract class DB {
   }
 
   public HikariDataSource getConnectionPool() {
-    return source;
+    return primarySource;
   }
 
 }

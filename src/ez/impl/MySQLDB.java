@@ -49,7 +49,7 @@ public class MySQLDB extends DB {
         throw propagate(e);
       }
       Log.info("Creating schema: " + getSchema());
-      DB temp = new MySQLDB(host, user, pass, "", ssl, maxConnections);
+      DB temp = new MySQLDB(primaryHost, primaryUser, primaryPass, "", ssl, maxConnections);
       temp.createSchema(getSchema());
       temp.shutdown();
     }
@@ -65,7 +65,7 @@ public class MySQLDB extends DB {
         createSchema(schema);
       }
     }
-    return new MySQLDB(host, user, pass, schema, ssl, maxConnections);
+    return new MySQLDB(primaryHost, primaryUser, primaryPass, schema, ssl, maxConnections);
   }
 
   @Override
