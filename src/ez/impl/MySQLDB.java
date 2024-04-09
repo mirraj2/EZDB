@@ -42,13 +42,14 @@ public class MySQLDB extends DB {
   public DB ensureSchemaExists() {
     Connection connection = null;
     try {
-      connection = getConnection();
+      connection = getConnection(true);
       close(connection);
     } catch (Exception e) {
       if (!Throwables.getRootCause(e).getMessage().contains("Unknown database")) {
         throw propagate(e);
       }
       Log.info("Creating schema: " + getSchema());
+      checkState(Pattern.matches("^[a-z0-9_.-]*$", schema), "Bad schema name: " + schema);
       DB temp = new MySQLDB(primaryHost, primaryUser, primaryPass, "", ssl, maxConnections);
       temp.createSchema(getSchema());
       temp.shutdown();
@@ -58,6 +59,7 @@ public class MySQLDB extends DB {
 
   @Override
   public DB usingSchema(String schema) {
+    // Kamran: Replace this with DBConnectionManager.getConnection
     schema = normalize(schema);
     if (!schema.isEmpty()) {
       checkState(Pattern.matches("^[a-z0-9_.-]*$", schema), "Bad schema name: " + schema);

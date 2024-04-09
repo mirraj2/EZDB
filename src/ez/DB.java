@@ -284,7 +284,7 @@ public abstract class DB {
       return this;
     }
 
-    Connection conn = getConnection();
+    Connection conn = getConnection(true);
     try {
       conn.setAutoCommit(false);
       conn.setTransactionIsolation(isolationLevel.level);
@@ -476,7 +476,7 @@ public abstract class DB {
     log("getSchemas()");
 
     XSet<String> ret = XSet.create();
-    Connection c = getConnection();
+    Connection c = getConnection(true);
     try {
       ResultSet rs = c.getMetaData().getCatalogs();
 
@@ -722,7 +722,7 @@ public abstract class DB {
   public void execute(XList<String> statements) {
     statements.forEach(this::log);
 
-    Connection c = getConnection();
+    Connection c = getConnection(true);
     try {
       Statement s = c.createStatement();
       statements.forEach(statement -> {
@@ -750,7 +750,7 @@ public abstract class DB {
 
     log(statement);
 
-    Connection c = getConnection();
+    Connection c = getConnection(true);
     try {
       Statement s = c.createStatement();
       s.executeUpdate(statement);
@@ -820,6 +820,10 @@ public abstract class DB {
   }
 
   public Connection getConnection() {
+    return getConnection(false);
+  }
+
+  public Connection getConnection(boolean forcePrimary) {
     // if (checkForInterrupts) {
     // Thread thread = Thread.currentThread();
     // Log.debug(thread + " :: " + thread.isInterrupted());
@@ -833,12 +837,18 @@ public abstract class DB {
 
     Connection ret = transactionConnections.get();
     if (ret == null) {
+      HikariDataSource source = primarySource;
       try {
-        ret = readOnlySource.getConnection();
-        ret.setReadOnly(true);
+        if (readOnlySource != null && !forcePrimary) {
+          source = readOnlySource;
+          ret = readOnlySource.getConnection();
+          ret.setReadOnly(true);
+        } else {
+          ret = primarySource.getConnection();
+        }
       } catch (Exception e) {
         propagateInterruption(e);
-        throw new RuntimeException("Problem connecting to " + readOnlySource.getJdbcUrl(), e);
+        throw new RuntimeException("Problem connecting to " + source.getJdbcUrl(), e);
       }
     }
     if (normalize(disableForeignKeyChecks.get())) {
