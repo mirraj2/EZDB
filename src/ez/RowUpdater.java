@@ -18,7 +18,7 @@ public class RowUpdater {
     query = db.appendTraceId(query);
     db.log(query, args);
 
-    Connection conn = db.getConnection();
+    Connection conn = db.getConnection(true);
     PreparedStatement statement = null;
     try {
       statement = conn.prepareStatement(query);
@@ -41,7 +41,7 @@ public class RowUpdater {
       return;
     }
 
-    Connection conn = db.getConnection();
+    Connection conn = db.getConnection(true);
     PreparedStatement statement = null;
     String query = "";
     try {

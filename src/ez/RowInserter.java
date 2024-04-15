@@ -40,7 +40,7 @@ public class RowInserter {
       return;
     }
 
-    Connection conn = db.getConnection();
+    Connection conn = db.getConnection(true);
     PreparedStatement statement = null;
     ResultSet generatedKeys = null;
 
@@ -145,7 +145,7 @@ public class RowInserter {
       return;
     }
 
-    Connection conn = db.getConnection();
+    Connection conn = db.getConnection(true);
     PreparedStatement statement = null;
 
     try {
