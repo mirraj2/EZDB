@@ -156,7 +156,7 @@ public abstract class DB {
     primarySource = createSource(host, user, pass);
   }
 
-  public void addReadOnlyReplica(String host, String user, String password) {
+  public void setReadOnlyReplica(String host, String user, String password) {
     readOnlySource = createSource(host, user, password);
   }
 
