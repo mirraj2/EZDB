@@ -164,7 +164,8 @@ public abstract class DB {
     String type = databaseType == DatabaseType.POSTGRES ? "postgresql" : "mysql";
     int port = databaseType == DatabaseType.POSTGRES ? 5432 : 3306;
 
-    String url = format("{0}://{1}:{2}/{3}", type, host, port, schema);
+    String url = format("{0}://{1}:{2}/{3}", type, host, port,
+        (databaseType == DatabaseType.POSTGRES) ? catalog : schema);
 
     if (databaseType == DatabaseType.MYSQL) {
       if (ssl) {
