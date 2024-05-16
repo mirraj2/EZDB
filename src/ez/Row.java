@@ -135,8 +135,11 @@ public class Row implements Iterable<String> {
   }
 
   public LocalDateTime getDateTime(String key) {
-    String s = (String) map.get(key);
-    return s == null ? null : LocalDateTime.parse(s);
+    Object o = map.get(key);
+    if (o instanceof LocalDateTime) {
+      return (LocalDateTime) o;
+    }
+    return o == null ? null : LocalDateTime.parse((String) o);
   }
 
   public byte[] getBlob(String key) {
