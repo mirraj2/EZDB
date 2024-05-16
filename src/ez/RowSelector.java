@@ -95,7 +95,11 @@ public class RowSelector {
           try {
             val = r.getObject(i);
           } catch (Exception e) {
-            throw new RuntimeException("Problem calling getObject on " + labels.get(i - 1), e);
+            try {
+              val = r.getString(i - 1);
+            } catch (Throwable t) {
+              throw new RuntimeException("Problem calling getObject on " + labels.get(i - 1), e);
+            }
           }
           if (val instanceof Clob) {
             Clob clob = (Clob) val;
