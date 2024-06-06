@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import ox.Log;
 import ox.x.XList;
@@ -36,7 +37,7 @@ public class RowUpdater {
     }
   }
 
-  public void update(DB db, String table, Collection<Row> rows) {
+  public void update(DB db, String table, Collection<Row> rows, Set<String> columnsToUpdate) {
     if (rows.isEmpty()) {
       return;
     }
@@ -45,7 +46,7 @@ public class RowUpdater {
     PreparedStatement statement = null;
     String query = "";
     try {
-      query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.getSchema(), table);
+      query = getFirst(rows, null).getUpdateStatement(db.databaseType, db.getSchema(), table, columnsToUpdate);
       query = db.appendTraceId(query);
       // db.log(query);
 
@@ -54,7 +55,11 @@ public class RowUpdater {
       for (Row row : rows) {
         int c = 1;
         for (Entry<String, Object> e : row.map.entrySet()) {
-          if (e.getKey().equals("id")) {
+          String key = e.getKey();
+          if (key.equals("id")) {
+            continue;
+          }
+          if (!columnsToUpdate.isEmpty() && !columnsToUpdate.contains(key)) {
             continue;
           }
           Object o = DB.convert(e.getValue());

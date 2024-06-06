@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.common.collect.Maps;
@@ -174,10 +175,11 @@ public class Row implements Iterable<String> {
     return s;
   }
 
-  String getUpdateStatement(DatabaseType databaseType, String schema, String table) {
+  String getUpdateStatement(DatabaseType databaseType, String schema, String table,
+      Set<String> columnsToUpdate) {
     String s = "UPDATE " + databaseType.escape(schema) + "." + databaseType.escape(table) + " SET ";
     for (String k : map.keySet()) {
-      if (!k.equals("id")) {
+      if (!k.equals("id") && (columnsToUpdate.isEmpty() || columnsToUpdate.contains(k))) {
         s += databaseType.escape(k) + " = ?, ";
       }
     }

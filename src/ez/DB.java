@@ -345,6 +345,10 @@ public abstract class DB {
     return only(rows);
   }
 
+  public XList<Row> select(String query, Collection<Object> args) {
+    return select(query, args.toArray());
+  }
+
   public XList<Row> select(String query, Object... args) {
     XList<Row> ret = XList.create();
     stream(query, XOptional.empty(), false, row -> {
@@ -459,7 +463,11 @@ public abstract class DB {
   }
 
   public void update(String table, Collection<Row> rows) {
-    new RowUpdater().update(this, table, rows);
+    update(table, rows, Collections.emptySet());
+  }
+
+  public void update(String table, Collection<Row> rows, Set<String> columnsToUpdate) {
+    new RowUpdater().update(this, table, rows, columnsToUpdate);
   }
 
   public long getCount(String countQuery, Object... args) {
