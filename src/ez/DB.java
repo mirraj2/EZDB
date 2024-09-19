@@ -326,7 +326,7 @@ public abstract class DB {
     }
   }
 
-  private boolean isInTransaction() {
+  public boolean isInTransaction() {
     return transactionConnections.get() != null;
   }
 
