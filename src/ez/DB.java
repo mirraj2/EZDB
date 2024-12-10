@@ -326,7 +326,7 @@ public abstract class DB {
     }
   }
 
-  private boolean isInTransaction() {
+  public boolean isInTransaction() {
     return transactionConnections.get() != null;
   }
 
@@ -423,11 +423,19 @@ public abstract class DB {
    * primary key or unique index)
    */
   public void replace(Table table, List<Row> rows) {
-    replace(table, rows, new ReplaceOptions("", XSet.create()));
+    replace(table, rows, new ReplaceOptions("", XSet.create(), false));
   }
 
   public void replace(Table table, List<Row> rows, ReplaceOptions replaceOptions) {
     insert(table, rows, 16_000, XOptional.of(replaceOptions));
+  }
+
+  /**
+   * REPLACE works exactly like INSERT, except that the new ro is NOT inserted and NO error raised if the new row
+   * conflicts with an existing row on any unique key.
+   */
+  public void insertIgnore(Table table, List<Row> rows) {
+    insert(table, rows, 16_000, XOptional.of(new ReplaceOptions("", XSet.empty(), true)));
   }
 
   public void insert(Table table, List<Row> rows) {

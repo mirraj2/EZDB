@@ -48,7 +48,7 @@ public class RowInserter {
       Row firstRow = first(rows);
       StringBuilder sb = new StringBuilder(
           firstRow.getInsertStatementFirstPart(db.databaseType, db.getSchema(), table,
-              replaceOptions.map(o -> o.uniqueIndex)));
+              replaceOptions.map(o -> o.uniqueIndex), replaceOptions.map(o -> o.ignoreDuplicates)));
       sb.append(" VALUES ");
 
       final String placeholders = getInsertPlaceholders(table, firstRow);
@@ -189,10 +189,12 @@ public class RowInserter {
   public static class ReplaceOptions {
     public final String uniqueIndex;
     public final XSet<String> columnsToIgnore;
+    public final boolean ignoreDuplicates;
 
-    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore) {
+    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore, boolean ignoreDuplicates) {
       this.uniqueIndex = normalize(uniqueIndex);
       this.columnsToIgnore = checkNotNull(columnsToIgnore);
+      this.ignoreDuplicates = ignoreDuplicates;
     }
   }
 

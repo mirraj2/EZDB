@@ -152,20 +152,19 @@ public class Row implements Iterable<String> {
     return (T) map.get(key);
   }
 
-  // String getInsertStatement(DatabaseType databaseType, String schema, String table) {
-  // String s = getInsertStatementFirstPart(databaseType, schema, table, false);
-  // s += " VALUES (";
-  // for (int i = 0; i < map.size(); i++) {
-  // s += "?,";
-  // }
-  // s = s.substring(0, s.length() - 1);
-  // s += ")";
-  // return s;
-  // }
-
   String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table,
-      XOptional<String> uniqueIndexForReplace) {
-    String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isPresent() ? "REPLACE" : "INSERT";
+      XOptional<String> uniqueIndexForReplace, XOptional<Boolean> ignoreDuplicateRows) {
+    // The default action is INSERT.
+    String action = "INSERT";
+    // Only take other actions if the database type is MySQL.
+    if (databaseType == DatabaseType.MYSQL) {
+      if (uniqueIndexForReplace.isPresent()) {
+        action = "REPLACE";
+      } else if (ignoreDuplicateRows.orElse(false)) {
+        action = "INSERT IGNORE";
+      }
+    }
+
     String s = action + " INTO " + databaseType.escape(schema) + "." + databaseType.escape(table.name) + " (";
     for (String k : map.keySet()) {
       s += databaseType.escape(k) + ", ";
