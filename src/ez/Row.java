@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.google.common.collect.Maps;
 
+import ez.RowInserter.ReplaceOptions;
 import ez.misc.DatabaseType;
 
 import ox.Json;
@@ -164,8 +165,12 @@ public class Row implements Iterable<String> {
   // }
 
   String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table,
-      XOptional<String> uniqueIndexForReplace) {
-    String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isPresent() ? "REPLACE" : "INSERT";
+      XOptional<ReplaceOptions> replaceOptions) {
+    String uniqueIndexForReplace = replaceOptions.map(o -> o.uniqueIndex).orElse("");
+    String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isEmpty() ? "INSERT" : "REPLACE";
+    if (replaceOptions.map(o -> o.insertIgnoreDups).orElse(false)) {
+      action += " IGNORE";
+    }
     String s = action + " INTO " + databaseType.escape(schema) + "." + databaseType.escape(table.name) + " (";
     for (String k : map.keySet()) {
       s += databaseType.escape(k) + ", ";

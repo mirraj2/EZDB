@@ -24,20 +24,21 @@ import ox.x.XSet;
 
 public class RowInserter {
 
-  public void insert(DB db, Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
+  public int insert(DB db, Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
     if (Iterables.isEmpty(rows)) {
-      return;
+      return 0;
     }
 
     // break the inserts into chunks
     if (rows.size() > chunkSize) {
+      int total = 0;
       for (int i = 0; i < rows.size(); i += chunkSize) {
         List<Row> chunk = rows.subList(i, Math.min(i + chunkSize, rows.size()));
         Stopwatch watch = Stopwatch.createStarted();
-        insert(db, table, chunk, chunkSize, replaceOptions);
+        total += insert(db, table, chunk, chunkSize, replaceOptions);
         Log.info("Inserted " + chunk.size() + " rows into " + table + " (" + watch + ")");
       }
-      return;
+      return total;
     }
 
     Connection conn = db.getConnection(true);
@@ -47,8 +48,7 @@ public class RowInserter {
     try {
       Row firstRow = first(rows);
       StringBuilder sb = new StringBuilder(
-          firstRow.getInsertStatementFirstPart(db.databaseType, db.getSchema(), table,
-              replaceOptions.map(o -> o.uniqueIndex)));
+          firstRow.getInsertStatementFirstPart(db.databaseType, db.getSchema(), table, replaceOptions));
       sb.append(" VALUES ");
 
       final String placeholders = getInsertPlaceholders(table, firstRow);
@@ -88,6 +88,7 @@ public class RowInserter {
       }
       statement.execute();
       generatedKeys = statement.getGeneratedKeys();
+      int ret = statement.getUpdateCount();
 
       Iterator<Row> iter = rows.iterator();
       while (generatedKeys.next() && iter.hasNext()) {
@@ -101,6 +102,7 @@ public class RowInserter {
         }
       }
 
+      return ret;
     } catch (Exception e) {
       throw propagate(e);
     } finally {
@@ -189,10 +191,12 @@ public class RowInserter {
   public static class ReplaceOptions {
     public final String uniqueIndex;
     public final XSet<String> columnsToIgnore;
+    public final boolean insertIgnoreDups;
 
-    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore) {
+    public ReplaceOptions(String uniqueIndex, XSet<String> columnsToIgnore, boolean insertIgnoreDups) {
       this.uniqueIndex = normalize(uniqueIndex);
       this.columnsToIgnore = checkNotNull(columnsToIgnore);
+      this.insertIgnoreDups = insertIgnoreDups;
     }
   }
 

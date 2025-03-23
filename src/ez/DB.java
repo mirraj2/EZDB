@@ -423,11 +423,11 @@ public abstract class DB {
    * primary key or unique index)
    */
   public void replace(Table table, List<Row> rows) {
-    replace(table, rows, new ReplaceOptions("", XSet.create()));
+    replace(table, rows, new ReplaceOptions("", XSet.create(), false));
   }
 
-  public void replace(Table table, List<Row> rows, ReplaceOptions replaceOptions) {
-    insert(table, rows, 16_000, XOptional.of(replaceOptions));
+  public int replace(Table table, List<Row> rows, ReplaceOptions replaceOptions) {
+    return insert(table, rows, 16_000, XOptional.of(replaceOptions));
   }
 
   public void insert(Table table, List<Row> rows) {
@@ -442,8 +442,8 @@ public abstract class DB {
     insert(table, rows, chunkSize, XOptional.empty());
   }
 
-  private void insert(Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
-    new RowInserter().insert(this, table, rows, chunkSize, replaceOptions);
+  private int insert(Table table, List<Row> rows, int chunkSize, XOptional<ReplaceOptions> replaceOptions) {
+    return new RowInserter().insert(this, table, rows, chunkSize, replaceOptions);
   }
 
   public void truncate(String tableName) {
