@@ -86,7 +86,12 @@ public class RowInserter {
           statement.setObject(c++, converted);
         }
       }
-      statement.execute();
+      try {
+        statement.execute();
+      } catch (Exception e) {
+        System.err.println("Problem with query: " + s);
+        propagate(e);
+      }
       generatedKeys = statement.getGeneratedKeys();
       int ret = statement.getUpdateCount();
 

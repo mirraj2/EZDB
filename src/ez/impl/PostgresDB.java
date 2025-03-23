@@ -1,5 +1,6 @@
 package ez.impl;
 
+import static com.google.common.base.Preconditions.checkState;
 import static ox.util.Functions.map;
 import static ox.util.Utils.format;
 
@@ -14,12 +15,30 @@ import ox.x.XList;
 
 public class PostgresDB extends DB {
 
-  public PostgresDB(String host, String user, String pass, String schema) {
-    this(host, user, pass, schema, false, 10);
+  public PostgresDB(String host, String user, String pass, String catalog, String schema) {
+    this(host, user, pass, catalog, schema, false, 10);
   }
 
-  public PostgresDB(String host, String user, String pass, String schema, boolean ssl, int maxConnections) {
-    super(DatabaseType.POSTGRES, host, user, pass, schema, ssl, maxConnections);
+  public PostgresDB(String host, String user, String pass, String catalog, String schema, boolean ssl,
+      int maxConnections) {
+    super(DatabaseType.POSTGRES, host, user, pass, catalog, schema, ssl, maxConnections);
+  }
+
+  @Override
+  public void addIndex(String table, XList<String> columns, boolean unique) {
+    String prefix = unique ? "uniq" : "idx";
+    String baseName = table + "_" + Joiner.on("_").join(columns);
+    String indexName = prefix + "_" + baseName;
+
+    if (indexName.length() > 64) {
+      int maxKeyLength = (64 - prefix.length() - table.length() - columns.size() - 2) / columns.size();
+      checkState(maxKeyLength > 0, "Table and column names are too long to generate an index name!");
+
+      indexName = prefix + "_" + table + "_" +
+          Joiner.on("_").join(columns.map(c -> c.length() > maxKeyLength ? c.substring(0, maxKeyLength) : c));
+    }
+
+    addIndex(table, columns, unique, indexName);
   }
 
   @Override

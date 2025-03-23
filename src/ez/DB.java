@@ -124,6 +124,11 @@ public abstract class DB {
 
   public DB(DatabaseType databaseType, String host, String user, String pass, String schema, boolean ssl,
       int maxConnections) {
+    this(databaseType, host, user, pass, "", schema, ssl, maxConnections);
+  }
+
+  public DB(DatabaseType databaseType, String host, String user, String pass, String catalog, String schema,
+      boolean ssl, int maxConnections) {
     this.databaseType = checkNotNull(databaseType);
     primaryHost = host;
     primaryUser = user;
@@ -131,8 +136,13 @@ public abstract class DB {
 
     schema = normalize(schema);
     if (databaseType == DatabaseType.POSTGRES) {
-      this.catalog = schema;
-      this.schema = "public";
+      if (catalog.isEmpty()) {
+        this.catalog = schema;
+        this.schema = "public";
+      } else {
+        this.catalog = catalog;
+        this.schema = schema;
+      }
     } else {
       this.catalog = "";
       this.schema = schema;
@@ -191,6 +201,7 @@ public abstract class DB {
     source.setUsername(user);
     source.setPassword(password);
     source.setMaximumPoolSize(maxConnections);
+    // source.setLeakDetectionThreshold(2000);
     // source.setConnectionInitSql("SET NAMES utf8mb4");
     source.setAutoCommit(true);
     return source;

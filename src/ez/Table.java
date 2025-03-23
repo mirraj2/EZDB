@@ -50,6 +50,8 @@ public class Table {
   private static final Map<Class<?>, String> columnTypesMap = Maps.newConcurrentMap();
   private static final Map<Class<?>, String> postgresTypesMap = Maps.newConcurrentMap();
 
+  public static DatabaseType DEFAULT_DATABASE_TYPE = DatabaseType.MYSQL;
+
   public final String name;
 
   private final Map<String, String> columns = Maps.newLinkedHashMap();
@@ -67,17 +69,17 @@ public class Table {
 
   public boolean caseSensitive = true;
 
-  private DatabaseType databaseType = DatabaseType.MYSQL;
+  private DatabaseType databaseType;
 
   private Map<Class<?>, FastDeserializer<?>> deserializers = Maps.newConcurrentMap();
 
   public Table(String name) {
-    this(name, DatabaseType.MYSQL);
+    this(name, DEFAULT_DATABASE_TYPE);
   }
 
   public Table(String name, DatabaseType databaseType) {
     this.name = name;
-    this.databaseType = databaseType;
+    this.databaseType = checkNotNull(databaseType);
   }
 
   public DatabaseType getDatabaseType() {
@@ -134,7 +136,11 @@ public class Table {
    */
   public Table idColumn() {
     primaryIndices.add(columns.size());
-    column("id", "INTEGER UNSIGNED NOT NULL AUTO_INCREMENT");
+    if (databaseType == DatabaseType.POSTGRES) {
+      column("id", "SERIAL PRIMARY KEY");
+    } else {
+      column("id", "INTEGER UNSIGNED NOT NULL AUTO_INCREMENT");
+    }
     return this;
   }
 
@@ -262,7 +268,7 @@ public class Table {
       }
       return s;
     } else {
-      String s = "CREATE TABLE " + databaseType.escape(name) + " (\n";
+      String s = "CREATE TABLE " + databaseType.escape(schema) + "." + databaseType.escape(name) + " (\n";
       for (Entry<String, String> e : columns.entrySet()) {
         s += databaseType.escape(e.getKey()) + " " + e.getValue() + ",\n";
       }
@@ -383,6 +389,8 @@ public class Table {
     postgresTypesMap.put(Double.class, "double precision");
     postgresTypesMap.put(Json.class, "jsonb");
     postgresTypesMap.put(PGgeometry.class, "geometry");
+    postgresTypesMap.put(String.class, "TEXT");
+    postgresTypesMap.put(Enum.class, "TEXT");
   }
 
   public static void registerColumn(Class<?> columnType, String sqlType) {

@@ -167,7 +167,7 @@ public class Row implements Iterable<String> {
   String getInsertStatementFirstPart(DatabaseType databaseType, String schema, Table table,
       XOptional<ReplaceOptions> replaceOptions) {
     String uniqueIndexForReplace = replaceOptions.map(o -> o.uniqueIndex).orElse("");
-    String action = databaseType == DatabaseType.MYSQL && uniqueIndexForReplace.isEmpty() ? "INSERT" : "REPLACE";
+    String action = databaseType != DatabaseType.MYSQL || uniqueIndexForReplace.isEmpty() ? "INSERT" : "REPLACE";
     if (replaceOptions.map(o -> o.insertIgnoreDups).orElse(false)) {
       action += " IGNORE";
     }
