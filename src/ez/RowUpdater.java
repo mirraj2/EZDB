@@ -19,26 +19,21 @@ public class RowUpdater {
     query = db.appendTraceId(query);
     db.log(query, args);
 
-    Log.debug(Thread.currentThread() + " getting connection");
     Connection conn = db.getConnection(true);
     PreparedStatement statement = null;
     try {
-      Log.debug(Thread.currentThread() + " preparing statement");
       statement = conn.prepareStatement(query);
       int c = 1;
       for (Object arg : args) {
         statement.setObject(c++, DB.convert(arg));
       }
-      Log.debug(Thread.currentThread() + " executing update");
       int ret = statement.executeUpdate();
-      Log.debug(Thread.currentThread() + " returning result");
       return ret;
     } catch (Exception e) {
       Log.error("query: " + abbreviate(query, 1024));
       throw propagate(e);
     } finally {
       db.close(statement);
-      Log.debug(Thread.currentThread() + " closing connection");
       db.close(conn);
     }
   }
